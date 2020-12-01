@@ -1,12 +1,13 @@
 export interface Char {
-  id: CharId;
+  id: string;
+  charId: CharId;
   value: string;
   visible: boolean;
   id_prev: string;
   id_next: string;
 }
 
-interface CharId {
+export interface CharId {
   siteId: string;
   clock: number;
 }
