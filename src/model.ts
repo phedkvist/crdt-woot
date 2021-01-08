@@ -1,5 +1,6 @@
-import { Char, CharId, Site, Operation } from './data';
+import { Char, CharId, Site, Operation } from './types';
 import { v4 as uuidv4 } from 'uuid';
+import _ from 'lodash';
 
 interface Sequence {
   [id: string]: Char;
@@ -14,6 +15,7 @@ export default class WString {
 
   constructor(start: Char, end: Char) {
     this.startId = start.id;
+    this.startChar = start.charId;
     this.endChar = end.charId;
     this.endId = end.id;
     this.sequence = {};
@@ -54,37 +56,66 @@ export default class WString {
 
   insert(char: Char) {
     // TODO: Local insert should just make the insert between prev and next
+    const { sequence } = this;
+
+    if (!sequence[char.nextId] && !sequence[char.prevId]) {
+      throw Error("Can't find the prevChar.id or nextChar.id");
+    }
+
+    const prevChar = { ...sequence[char.prevId], nextId: char.id };
+    const nextChar = { ...sequence[char.nextId], prevId: char.id };
+    sequence[char.id] = char;
+    sequence[char.prevId] = prevChar;
+    sequence[char.nextId] = nextChar;
   }
 
-  integrateIns(char: Char, prev: string, next: string) {
+  // TODO: Start using _.deepClone here.
+  integrateIns(incomingChar: Char) {
+    const { prevId: prev, nextId: next } = incomingChar;
     const subseq = this.subseq(prev, next);
 
     if (subseq.length === 0) {
-      this.sequence[char.id] = char;
-      this.sequence[prev].nextId = char.id;
-      this.sequence[next].prevId = char.id;
+      this.sequence[incomingChar.id] = incomingChar;
+      this.sequence[prev].nextId = incomingChar.id;
+      this.sequence[next].prevId = incomingChar.id;
     } else {
       let i = 0;
       let nextValue = subseq[i];
       while (
-        i < subseq.length - 1 &&
-        this.comesBefore(nextValue.charId, char.charId)
+        i < subseq.length &&
+        nextValue &&
+        this.comesBefore(nextValue.charId, incomingChar.charId)
       ) {
         i += 1;
         nextValue = subseq[i];
       }
-      // Now we have found the correct index. Add char with prevId
-
-      // Insert char between the characters
-      this.sequence[char.id] = {
-        ...char,
-        nextId: nextValue.id,
-        prevId: nextValue.prevId,
-      };
-
-      // Will update adjacent character ids
-      this.sequence[nextValue.id].prevId = char.id;
-      this.sequence[nextValue.prevId].nextId = char.id;
+      if (!nextValue) {
+        // Incoming element is inserted at the end of the subseq
+        i -= 1;
+        nextValue = subseq[i];
+        this.sequence[incomingChar.id] = {
+          ...incomingChar,
+          nextId: _.clone(nextValue.nextId),
+          prevId: _.clone(nextValue.id),
+        };
+        this.sequence[nextValue.id] = {
+          ...this.sequence[nextValue.id],
+          nextId: _.clone(incomingChar.id),
+        };
+        this.sequence[nextValue.nextId] = {
+          ...this.sequence[nextValue.nextId],
+          prevId: _.clone(incomingChar.id),
+        };
+      } else {
+        // Incoming element is inserted before next value.
+        this.sequence[incomingChar.id] = {
+          ...incomingChar,
+          nextId: _.clone(nextValue.id),
+          prevId: _.clone(nextValue.prevId),
+        };
+        this.sequence[nextValue.id].prevId = incomingChar.id;
+        this.sequence[nextValue.prevId].nextId = incomingChar.id;
+      }
     }
   }
 
@@ -154,5 +185,28 @@ export default class WString {
       throw Error(`Char with id: ${id} could not be found in the sequence`);
     }
     return this.sequence[id].visible;
+  }
+
+  getState() {
+    let text = '';
+    let i = 0;
+    let nextId = this.startId;
+    const len = Object.keys(this.sequence).length - 1;
+    while (i < len) {
+      const char = this.sequence[nextId];
+      if (!char) {
+        throw Error('Cant find next char value');
+      }
+      if (!char.value && char.visible) {
+        throw Error('Cant find char value: ');
+      }
+      if (char.value && char.visible) {
+        text += char.value;
+      }
+
+      nextId = char.nextId;
+      i++;
+    }
+    return text;
   }
 }

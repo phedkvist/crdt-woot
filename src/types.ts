@@ -27,11 +27,12 @@ export interface CharId {
 }
 
 export enum Operation {
-  Insert,
-  Delete,
+  Insert = 'insert',
+  Delete = 'delete',
 }
 
 export interface Payload {
   char: Char;
   operation: Operation;
+  id: string;
 }
