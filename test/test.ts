@@ -69,5 +69,16 @@ describe('CRDT WOOT', function () {
 
       expect(c3.getState()).to.eql('a312b');
     });
+    it('Site 1 integrate op1, op2, op3', () => {
+      c1.generateIns(1, '1');
+      expect(c1.getState()).to.eql('a1b');
+      c1.generateIns(1, '3');
+      expect(c1.getState()).to.eql('a31b');
+
+      const op2 = c2.generateIns(1, '2');
+      c1.reception(_.cloneDeep(op2));
+      c1.main();
+      expect(c1.getState()).to.eql('a312b');
+    });
   });
 });
