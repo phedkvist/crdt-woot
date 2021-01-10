@@ -73,7 +73,7 @@ export default class WString {
   integrateIns(incomingChar: Char) {
     const { prevId: prev, nextId: next } = incomingChar;
     const subseq = this.subseq(prev, next);
-
+    console.log(subseq);
     if (subseq.length === 0) {
       this.sequence[incomingChar.id] = incomingChar;
       this.sequence[prev].nextId = incomingChar.id;
@@ -93,6 +93,9 @@ export default class WString {
         // Incoming element is inserted at the end of the subseq
         i -= 1;
         nextValue = subseq[i];
+        // SEEMS LIKE WE SHOULD NOT KEEP CHANGING THE IDs,
+        // as it mutates the operations.
+
         this.sequence[incomingChar.id] = {
           ...incomingChar,
           nextId: _.clone(nextValue.nextId),
@@ -131,12 +134,9 @@ export default class WString {
     let subseq = [];
     let nextId = startChar.nextId;
     while (nextId !== end) {
-      const nextChar = { ...this.sequence[nextId] };
+      const nextChar = _.cloneDeep(this.sequence[nextId]);
       subseq.push(nextChar);
-      nextId = nextChar.nextId;
-      if (nextId === this.endId) {
-        throw Error('Cant find end char');
-      }
+      nextId = _.clone(nextChar.nextId);
     }
     return subseq;
   }
