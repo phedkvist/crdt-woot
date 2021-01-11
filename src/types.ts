@@ -1,9 +1,7 @@
-import WString from './model';
-
 export interface Site {
   siteId: string; // unique id for each site
   clock: number;
-  sequence: WString;
+  sequence: Char[];
   operationPool: Char[];
 }
 

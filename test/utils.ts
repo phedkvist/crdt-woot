@@ -7,7 +7,7 @@ export const generateSite = () => {
   const startId = uuidv4();
   const endId = uuidv4();
   const start: Char = {
-    id: uuidv4(),
+    id: startId,
     charId: {
       siteId,
       clock: 0,
@@ -30,3 +30,21 @@ export const generateSite = () => {
   };
   return { start, end, siteId };
 };
+
+export const generateChar = (
+  siteId: string,
+  clock: number,
+  alpha: string,
+  prevId: string,
+  nextId: string
+): Char => ({
+  id: uuidv4(),
+  charId: {
+    siteId,
+    clock,
+  },
+  value: alpha,
+  visible: true,
+  prevId,
+  nextId,
+});

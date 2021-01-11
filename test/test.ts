@@ -1,10 +1,46 @@
 import { expect } from 'chai';
 import _ from 'lodash';
 import Controller from '../src/controller';
-import { Payload } from '../src/types';
-import { generateSite } from './utils';
+import * as model from '../src/model';
+import { Char, Payload } from '../src/types';
+import { generateChar, generateSite } from './utils';
 
 describe('CRDT WOOT', function () {
+  describe.only('Model', () => {
+    it('Should determine precedence between two characters from different sites', () => {
+      const site1 = '1';
+      const site2 = '2';
+      const { start, end } = generateSite();
+      const c1: Char = generateChar(site1, 0, 'a', start.id, end.id);
+      const c2: Char = generateChar(site2, 0, 'b', start.id, end.id);
+      expect(model.comesBefore(c1.charId, c2.charId)).to.eql(true);
+    });
+    it('Should determine precedence between two characters from same sites', () => {
+      const site1 = '1';
+      const { start, end } = generateSite();
+      const c1: Char = generateChar(site1, 0, 'a', start.id, end.id);
+      const c2: Char = generateChar(site1, 1, 'b', start.id, end.id);
+      expect(model.comesBefore(c1.charId, c2.charId)).to.eql(true);
+    });
+    it('Should get items in subsequence', () => {
+      const site1 = '1';
+      const site2 = '2';
+      const { start, end } = generateSite();
+      const c1: Char = generateChar(site1, 0, 'a', start.id, end.id);
+      expect(model.subseq(start.id, end.id, [start, c1, end])).to.eql([c1]);
+      const c2: Char = generateChar(site2, 0, 'b', start.id, end.id);
+      expect(model.subseq(start.id, end.id, [start, c1, c2, end])).to.eql([
+        c1,
+        c2,
+      ]);
+    });
+    it('Should mark a deleted char as not visible', () => {
+      const site1 = '1';
+      const { start, end } = generateSite();
+      const c1: Char = generateChar(site1, 0, 'a', start.id, end.id);
+      expect(model.deleteChar(c1, [c1])).to.eql([{ ...c1, visible: false }]);
+    });
+  });
   describe('Integrate local operations', () => {
     let controller: Controller;
     beforeEach(() => {
@@ -24,7 +60,7 @@ describe('CRDT WOOT', function () {
       controller.generateIns(0, 'a');
       const { char } = controller.generateIns(1, 'b');
       controller.generateIns(2, 'c');
-      controller.site.sequence.delete(char);
+      controller.deleteChar(char);
       const text = controller.getState();
       expect(text).to.eql('ac');
     });
@@ -37,6 +73,7 @@ describe('CRDT WOOT', function () {
     describe('Each site should result in document a312b', () => {
       beforeEach(() => {
         const { start, end, siteId } = generateSite();
+
         c1 = new Controller(_.cloneDeep(start), _.cloneDeep(end), siteId);
         c2 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '2');
         c3 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '3');
@@ -96,7 +133,7 @@ describe('CRDT WOOT', function () {
         op02 = c2.generateIns(0, '2');
       });
 
-      it.only('Site 3 integrates op1, op2, op3, op4', () => {
+      it('Site 3 integrates op1, op2, op3, op4', () => {
         c3.reception(op01);
         c3.main();
         const op03 = c3.generateIns(0, '3');

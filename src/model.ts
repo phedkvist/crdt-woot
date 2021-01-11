@@ -2,211 +2,173 @@ import { Char, CharId, Site, Operation } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
 
-interface Sequence {
-  [id: string]: Char;
+function length(sequence: Char[]): number {
+  return Object.keys(sequence).length;
 }
 
-export default class WString {
-  startChar: CharId;
-  startId: string;
-  endChar: CharId;
-  endId: string;
-  sequence: Sequence; // Propably better to some sort of object that still is ordered?
+export function comesBefore(char1: CharId, char2: CharId): boolean {
+  return (
+    char1.siteId < char2.siteId ||
+    (char1.siteId === char2.siteId && char1.clock < char2.clock)
+  );
+}
 
-  constructor(start: Char, end: Char) {
-    this.startId = start.id;
-    this.startChar = start.charId;
-    this.endChar = end.charId;
-    this.endId = end.id;
-    this.sequence = {};
-    this.sequence[start.id] = start;
-    this.sequence[end.id] = end;
+export function prepareInsert(
+  index: number,
+  alpha: string,
+  siteId: string,
+  clock: number,
+  sequence: Char[]
+): Char {
+  const { nextId, prevId } = position(index, sequence);
+  return {
+    id: uuidv4(),
+    charId: {
+      siteId,
+      clock,
+    },
+    value: alpha,
+    visible: true,
+    prevId,
+    nextId,
+  };
+}
+
+// TODO: Should test this function
+export function insert(char: Char, sequence: Char[]) {
+  const prev = sequence.find((c) => c.id === char.prevId);
+  const next = sequence.find((c) => c.id === char.nextId);
+
+  if (!next && !prev) {
+    throw Error("Can't find the prevChar.id or nextChar.id");
   }
 
-  length(): number {
-    return Object.keys(this.sequence).length;
+  const prevIndex = sequence.findIndex((c) => c.id === char.prevId);
+
+  const tmpSequence = _.cloneDeep(sequence);
+  tmpSequence.splice(prevIndex, 0, char);
+  return tmpSequence;
+}
+
+export function integrateIns(incomingChar: Char, sequence: Char[]) {
+  const { prevId: prev, nextId: next } = incomingChar;
+  const subsequence = subseq(prev, next, sequence);
+
+  let i = 0;
+  let nextValue = subseq[i];
+  while (
+    i < subsequence.length &&
+    nextValue &&
+    this.comesBefore(nextValue.charId, incomingChar.charId)
+  ) {
+    i += 1;
+    nextValue = subsequence[i];
+  }
+  if (i === this.sequence.length) {
+    i = -1;
   }
 
-  comesBefore(char1: CharId, char2: CharId): boolean {
-    return (
-      char1.siteId < char2.siteId ||
-      (char1.siteId === char2.siteId && char1.clock < char2.clock)
-    );
-  }
+  return sequence.splice(i, 0, incomingChar);
+}
 
-  prepareInsert(
-    position: number,
-    alpha: string,
-    siteId: string,
-    clock: number
-  ): Char {
-    const { nextId, prevId } = this.position(position);
-    return {
-      id: uuidv4(),
-      charId: {
-        siteId,
-        clock,
-      },
-      value: alpha,
-      visible: true,
-      prevId,
-      nextId,
-    };
-  }
-
-  insert(char: Char) {
-    // TODO: Local insert should just make the insert between prev and next
-    const { sequence } = this;
-
-    if (!sequence[char.nextId] && !sequence[char.prevId]) {
-      throw Error("Can't find the prevChar.id or nextChar.id");
+export function deleteChar(char: Char, sequence: Char[]) {
+  return _.cloneDeep(sequence).map((c) => {
+    if (c.id === char.id) {
+      return { ...c, visible: false };
     }
+    return c;
+  });
+}
 
-    const prevChar = { ...sequence[char.prevId], nextId: char.id };
-    const nextChar = { ...sequence[char.nextId], prevId: char.id };
-    sequence[char.id] = char;
-    sequence[char.prevId] = prevChar;
-    sequence[char.nextId] = nextChar;
+export function subseq(
+  startId: string,
+  endId: string,
+  sequence: Char[]
+): Char[] {
+  const startIndex = sequence.findIndex((c) => c.id === startId);
+  if (startIndex === -1) {
+    throw Error('Cant find start char at site ');
   }
 
-  // TODO: Start using _.deepClone here.
-  integrateIns(incomingChar: Char) {
-    const { prevId: prev, nextId: next } = incomingChar;
-    const subseq = this.subseq(prev, next);
-    console.log(subseq);
-    if (subseq.length === 0) {
-      this.sequence[incomingChar.id] = incomingChar;
-      this.sequence[prev].nextId = incomingChar.id;
-      this.sequence[next].prevId = incomingChar.id;
-    } else {
-      let i = 0;
-      let nextValue = subseq[i];
-      while (
-        i < subseq.length &&
-        nextValue &&
-        this.comesBefore(nextValue.charId, incomingChar.charId)
-      ) {
-        i += 1;
-        nextValue = subseq[i];
-      }
-      if (!nextValue) {
-        // Incoming element is inserted at the end of the subseq
-        i -= 1;
-        nextValue = subseq[i];
-        // SEEMS LIKE WE SHOULD NOT KEEP CHANGING THE IDs,
-        // as it mutates the operations.
-
-        this.sequence[incomingChar.id] = {
-          ...incomingChar,
-          nextId: _.clone(nextValue.nextId),
-          prevId: _.clone(nextValue.id),
-        };
-        this.sequence[nextValue.id] = {
-          ...this.sequence[nextValue.id],
-          nextId: _.clone(incomingChar.id),
-        };
-        this.sequence[nextValue.nextId] = {
-          ...this.sequence[nextValue.nextId],
-          prevId: _.clone(incomingChar.id),
-        };
-      } else {
-        // Incoming element is inserted before next value.
-        this.sequence[incomingChar.id] = {
-          ...incomingChar,
-          nextId: _.clone(nextValue.id),
-          prevId: _.clone(nextValue.prevId),
-        };
-        this.sequence[nextValue.id].prevId = incomingChar.id;
-        this.sequence[nextValue.prevId].nextId = incomingChar.id;
-      }
+  let subseq = [];
+  let index = startIndex + 1;
+  while (index <= sequence.length) {
+    const nextChar = _.cloneDeep(sequence[index]);
+    if (nextChar.id === endId) {
+      break;
     }
+    subseq.push(nextChar);
+    index = index + 1;
   }
+  return subseq;
+}
 
-  delete(char: Char) {
-    this.sequence[char.id] = { ...this.sequence[char.id], visible: false };
-  }
+// Lets make the assumption first char is 0 indexed.
+function position(index: number, sequence: Char[]) {
+  let nextChar: Char = sequence[0];
+  let i = 0;
 
-  subseq(start: string, end: string): Char[] {
-    const startChar = this.sequence[start];
-    if (!startChar) {
-      throw Error('Cant find start char');
+  let nextId: string, prevId: string;
+  while (i <= index) {
+    if (i == index) {
+      prevId = nextChar.id;
+      nextId = nextChar.nextId;
+      break;
     }
-    let subseq = [];
-    let nextId = startChar.nextId;
-    while (nextId !== end) {
-      const nextChar = _.cloneDeep(this.sequence[nextId]);
-      subseq.push(nextChar);
-      nextId = _.clone(nextChar.nextId);
+    i += 1;
+    nextChar = sequence[i];
+  }
+  return {
+    prevId,
+    nextId,
+  };
+}
+
+export function contains(id: string, sequence: Char[]): boolean {
+  return sequence.find((c) => c.id === id) !== undefined;
+}
+
+export function value(char: Char) {
+  return char.value;
+}
+
+export function isExecutable(
+  char: Char,
+  operation: Operation,
+  sequence: Char[]
+) {
+  if (operation === Operation.Delete) {
+    return contains(char.id, sequence);
+  } else if (Operation.Insert) {
+    return contains(char.nextId, sequence) && contains(char.prevId, sequence);
+  } else {
+    throw Error('Unknow operation');
+  }
+}
+
+function isVisible(id: string, sequence: Char[]): boolean {
+  if (!(id in sequence)) {
+    throw Error(`Char with id: ${id} could not be found in the sequence`);
+  }
+  return sequence[id].visible;
+}
+
+export function getState(sequence: Char[]) {
+  let text = '';
+  let i = 0;
+  const len = Object.keys(sequence).length - 1;
+  while (i < len) {
+    const char = sequence[i];
+    if (!char) {
+      throw Error('Cant find next char value');
     }
-    return subseq;
-  }
-
-  // Lets make the assumption first char is 0 indexed.
-  position(index: number) {
-    let nextChar: Char = this.sequence[this.startId];
-    let i = 0;
-
-    let nextId: string, prevId: string;
-    while (i <= index) {
-      if (i == index) {
-        prevId = nextChar.id;
-        nextId = nextChar.nextId;
-        break;
-      }
-      nextChar = this.sequence[nextChar.nextId];
-      i += 1;
+    if (!char.value && char.visible) {
+      throw Error('Cant find char value: ');
     }
-    return {
-      prevId,
-      nextId,
-    };
-  }
-
-  contains(id: string): boolean {
-    return id in this.sequence;
-  }
-
-  value(char: Char) {
-    return char.value;
-  }
-
-  isExecutable(char: Char, operation: Operation) {
-    if (operation === Operation.Delete) {
-      return this.contains(char.id);
-    } else if (Operation.Insert) {
-      return this.contains(char.nextId) && this.contains(char.prevId);
-    } else {
-      throw Error('Unknow operation');
+    if (char.value && char.visible) {
+      text += char.value;
     }
+    i++;
   }
-
-  isVisible(id: string): boolean {
-    if (!(id in this.sequence)) {
-      throw Error(`Char with id: ${id} could not be found in the sequence`);
-    }
-    return this.sequence[id].visible;
-  }
-
-  getState() {
-    let text = '';
-    let i = 0;
-    let nextId = this.startId;
-    const len = Object.keys(this.sequence).length - 1;
-    while (i < len) {
-      const char = this.sequence[nextId];
-      if (!char) {
-        throw Error('Cant find next char value');
-      }
-      if (!char.value && char.visible) {
-        throw Error('Cant find char value: ');
-      }
-      if (char.value && char.visible) {
-        text += char.value;
-      }
-
-      nextId = char.nextId;
-      i++;
-    }
-    return text;
-  }
+  return text;
 }

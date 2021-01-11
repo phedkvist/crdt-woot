@@ -1,6 +1,6 @@
 import { Site, Char, Payload, Operation } from './types';
 import { v4 as uuidv4 } from 'uuid';
-import WString from './model';
+import * as model from './model';
 
 export default class Controller {
   site: Site;
@@ -10,7 +10,7 @@ export default class Controller {
     this.site = {
       siteId,
       clock: 0,
-      sequence: new WString(start, end),
+      sequence: [start, end],
       operationPool: [],
     };
     this.pool = [];
@@ -24,11 +24,13 @@ export default class Controller {
     const integratedIds = [];
 
     pool.map(({ char, operation, id }) => {
-      if (sequence.isExecutable(char, operation)) {
+      if (model.isExecutable(char, operation, sequence)) {
         if (operation === Operation.Insert) {
-          sequence.integrateIns(char);
+          const newSequence = model.integrateIns(char, sequence);
+          this.site = { ...this.site, sequence: newSequence };
         } else if (operation === Operation.Delete) {
-          sequence.delete(char);
+          const newSequence = model.deleteChar(char, sequence);
+          this.site = { ...this.site, sequence: newSequence };
         }
         integratedIds.push(id);
       } else {
@@ -45,15 +47,21 @@ export default class Controller {
     const { sequence, clock, siteId } = this.site;
     const newClock = clock + 1;
 
-    const newChar = sequence.prepareInsert(position, alpha, siteId, newClock);
+    const newChar = model.prepareInsert(
+      position,
+      alpha,
+      siteId,
+      newClock,
+      sequence
+    );
     const payload = {
       char: { ...newChar },
       operation: Operation.Insert,
       id: uuidv4(),
     };
-    sequence.insert(newChar);
+    const newSequence = model.insert(newChar, sequence);
     // TODO: Broadcast newChar
-    this.site = { ...this.site, clock: newClock };
+    this.site = { ...this.site, clock: newClock, sequence: newSequence };
     return payload;
   }
 
@@ -61,7 +69,12 @@ export default class Controller {
     this.pool.push(payload);
   }
 
+  deleteChar(char: Char) {
+    const newSequence = model.deleteChar(char, this.site.sequence);
+    this.site = { ...this.site, sequence: newSequence };
+  }
+
   getState() {
-    return this.site.sequence.getState();
+    return model.getState(this.site.sequence);
   }
 }
