@@ -1,10 +1,6 @@
-import { Char, CharId, Site, Operation } from './types';
+import { Char, CharId, Operation } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
-
-function length(sequence: Char[]): number {
-  return Object.keys(sequence).length;
-}
 
 export function comesBefore(char1: CharId, char2: CharId): boolean {
   return (
@@ -128,10 +124,6 @@ export function contains(id: string, sequence: Char[]): boolean {
   return sequence.find((c) => c.id === id) !== undefined;
 }
 
-export function value(char: Char) {
-  return char.value;
-}
-
 export function isExecutable(
   char: Char,
   operation: Operation,
@@ -144,13 +136,6 @@ export function isExecutable(
   } else {
     throw Error('Unknow operation');
   }
-}
-
-function isVisible(id: string, sequence: Char[]): boolean {
-  if (!(id in sequence)) {
-    throw Error(`Char with id: ${id} could not be found in the sequence`);
-  }
-  return sequence[id].visible;
 }
 
 export function getState(sequence: Char[]) {

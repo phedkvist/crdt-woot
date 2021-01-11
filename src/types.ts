@@ -5,11 +5,6 @@ export interface Site {
   operationPool: Char[];
 }
 
-interface VectorClock {
-  siteId: string;
-  clock: number;
-}
-
 export interface Char {
   id: string;
   charId: CharId;
