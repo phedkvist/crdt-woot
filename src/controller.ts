@@ -26,7 +26,10 @@ export default class Controller {
     pool.map(({ char, operation, id }) => {
       if (model.isExecutable(char, operation, sequence)) {
         if (operation === Operation.Insert) {
-          const newSequence = model.integrateIns(char, sequence);
+          const prev = sequence.find((c) => c.id === char.prevId);
+          const next = sequence.find((c) => c.id === char.nextId);
+
+          const newSequence = model.integrateIns(char, prev, next, sequence);
           this.site = { ...this.site, sequence: newSequence };
         } else if (operation === Operation.Delete) {
           const newSequence = model.deleteChar(char, sequence);

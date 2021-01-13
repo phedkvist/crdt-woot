@@ -30,7 +30,6 @@ export function prepareInsert(
   };
 }
 
-// TODO: Should test this function
 export function insert(char: Char, sequence: Char[]) {
   const prev = sequence.find((c) => c.id === char.prevId);
   const next = sequence.find((c) => c.id === char.nextId);
@@ -39,32 +38,48 @@ export function insert(char: Char, sequence: Char[]) {
     throw Error("Can't find the prevChar.id or nextChar.id");
   }
 
-  const prevIndex = sequence.findIndex((c) => c.id === char.prevId);
+  const insertIndex = 1 + sequence.findIndex((c) => c.id === char.prevId);
 
   const tmpSequence = _.cloneDeep(sequence);
-  tmpSequence.splice(prevIndex, 0, char);
+  tmpSequence.splice(insertIndex, 0, char);
   return tmpSequence;
 }
 
-export function integrateIns(incomingChar: Char, sequence: Char[]) {
-  const { prevId: prev, nextId: next } = incomingChar;
-  const subsequence = subseq(prev, next, sequence);
+export function integrateIns(
+  incomingChar: Char,
+  prev: Char,
+  next: Char,
+  sequence: Char[]
+) {
+  const lowerbound = sequence.findIndex((c) => c.id === prev.id);
+  const upperbound = sequence.findIndex((c) => c.id === next.id);
+  const subsequence = sequence.filter(
+    (c, i) => i > lowerbound && i < upperbound
+  );
 
-  let i = 0;
-  let nextValue = subseq[i];
-  while (
-    i < subsequence.length &&
-    nextValue &&
-    this.comesBefore(nextValue.charId, incomingChar.charId)
-  ) {
-    i += 1;
-    nextValue = subsequence[i];
-  }
-  if (i === this.sequence.length) {
-    i = -1;
-  }
+  if (subsequence.length === 0) {
+    const tmpSequence = _.cloneDeep(sequence);
+    tmpSequence.splice(upperbound, 0, incomingChar);
+    return tmpSequence;
+  } else {
+    const L = [prev];
 
-  return sequence.splice(i, 0, incomingChar);
+    subsequence.forEach((char) => {
+      const cPrevIndex = sequence.findIndex((c) => c.id === char.prevId);
+      const cNextIndex = sequence.findIndex((c) => c.id === char.nextId);
+
+      if (cPrevIndex <= lowerbound && cNextIndex <= upperbound) {
+        L.push(char);
+      }
+    });
+    L.push(next);
+
+    let i = 0;
+    while (i < L.length - 1 && comesBefore(L[i].charId, incomingChar.charId)) {
+      i += 1;
+    }
+    return integrateIns(incomingChar, L[i - 1], L[i], sequence);
+  }
 }
 
 export function deleteChar(char: Char, sequence: Char[]) {
@@ -99,8 +114,7 @@ export function subseq(
   return subseq;
 }
 
-// Lets make the assumption first char is 0 indexed.
-function position(index: number, sequence: Char[]) {
+export function position(index: number, sequence: Char[]) {
   let nextChar: Char = sequence[0];
   let i = 0;
 
@@ -144,9 +158,6 @@ export function getState(sequence: Char[]) {
   const len = Object.keys(sequence).length - 1;
   while (i < len) {
     const char = sequence[i];
-    if (!char) {
-      throw Error('Cant find next char value');
-    }
     if (!char.value && char.visible) {
       throw Error('Cant find char value: ');
     }
