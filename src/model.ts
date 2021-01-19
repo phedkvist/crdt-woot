@@ -49,13 +49,25 @@ export function integrateIns(
   incomingChar: Char,
   prev: Char,
   next: Char,
-  sequence: Char[]
+  sequence: Char[],
+  print: boolean = false
 ) {
   const lowerbound = sequence.findIndex((c) => c.id === prev.id);
   const upperbound = sequence.findIndex((c) => c.id === next.id);
+
   const subsequence = sequence.filter(
     (c, i) => i > lowerbound && i < upperbound
   );
+
+  if (print) {
+    console.log('lowerbound: ', lowerbound);
+    console.log('upperbound: ', upperbound);
+    console.log('PREV: ', prev.value, '\n NEXT: ', next.value);
+    console.log(
+      'SUBSEQ',
+      subsequence.map((c) => c.value)
+    );
+  }
 
   if (subsequence.length === 0) {
     const tmpSequence = _.cloneDeep(sequence);
@@ -67,18 +79,28 @@ export function integrateIns(
     subsequence.forEach((char) => {
       const cPrevIndex = sequence.findIndex((c) => c.id === char.prevId);
       const cNextIndex = sequence.findIndex((c) => c.id === char.nextId);
-
-      if (cPrevIndex <= lowerbound && cNextIndex <= upperbound) {
+      if (print) {
+        console.log('cprev: ', cPrevIndex);
+        console.log('cnext: ', cNextIndex);
+      }
+      if (cPrevIndex <= lowerbound && upperbound <= cNextIndex) {
         L.push(char);
       }
     });
     L.push(next);
 
-    let i = 0;
-    while (i < L.length - 1 && comesBefore(L[i].charId, incomingChar.charId)) {
-      i += 1;
+    if (print) {
+      console.log(
+        'L: ',
+        L.map((c) => c.value)
+      );
     }
-    return integrateIns(incomingChar, L[i - 1], L[i], sequence);
+
+    let i = 1;
+    while (i < L.length - 1 && comesBefore(L[i].charId, incomingChar.charId)) {
+      i = i + 1;
+    }
+    return integrateIns(incomingChar, L[i - 1], L[i], sequence, print);
   }
 }
 

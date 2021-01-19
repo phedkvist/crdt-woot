@@ -156,26 +156,46 @@ describe('CRDT WOOT', function () {
       expect(model.comesBefore(c5.charId, c3.charId)).to.eql(false);
       expect(model.getState(seq2)).to.eql('a312b');
     });
-    it('integrate insert operations such that all sites end up with 3124', () => {
+    it('integrate insert operations such that site 3 end up with 3124', () => {
       const site1 = '1';
       const site2 = '2';
       const site3 = '3';
       const { start, end } = generateSite(site1);
-      const c1: Char = generateChar(site1, 0, '1', start.id, end.id);
-      const c2: Char = generateChar(site2, 0, '2', start.id, end.id);
-      const c3: Char = generateChar(site3, 0, '3', start.id, c1.id);
+
+      const c1: Char = generateChar(site1, 3, '1', start.id, end.id);
+      const c2: Char = generateChar(site2, 1, '2', start.id, end.id);
+      const c3: Char = generateChar(site3, 1, '3', start.id, c1.id);
+      const c4: Char = generateChar(site3, 2, '4', c1.id, end.id);
+
       const seq = model.insert(
         c3,
         model.integrateIns(c1, start, end, [start, end])
       );
       expect(model.getState(seq)).to.eql('31');
-      const c4: Char = generateChar(site3, 1, '4', c1.id, end.id);
       const seq2 = model.insert(c4, seq);
       expect(model.getState(seq2)).to.eql('314');
-      const seqTmp = model.integrateIns(c2, start, end, [start, c1, end]);
-      expect(model.getState(seqTmp)).to.eql('12');
-      const seq3 = model.integrateIns(c2, start, end, seq2);
+      const seq3 = model.integrateIns(c2, start, end, seq2, false);
       expect(model.getState(seq3)).to.eql('3124');
+    });
+    it('integrate insert operations such that site 2 end up with 3124', () => {
+      const site1 = '1';
+      const site2 = '2';
+      const site3 = '3';
+      const { start, end } = generateSite(site1);
+
+      const c1: Char = generateChar(site1, 3, '1', start.id, end.id);
+      const c2: Char = generateChar(site2, 1, '2', start.id, end.id);
+      const c3: Char = generateChar(site3, 1, '3', start.id, c1.id);
+      const c4: Char = generateChar(site3, 2, '4', c1.id, end.id);
+
+      const seq = model.insert(c2, [start, end]);
+      expect(model.getState(seq)).to.eql('2');
+      const seq2 = model.integrateIns(c1, start, end, seq);
+      expect(model.getState(seq2)).to.eql('12');
+      const seq3 = model.integrateIns(c3, start, c1, seq2, false);
+      expect(model.getState(seq3)).to.eql('312');
+      const seq4 = model.integrateIns(c4, c1, end, seq3, false);
+      expect(model.getState(seq4)).to.eql('3124');
     });
   });
   describe('Controller', () => {
