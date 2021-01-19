@@ -197,6 +197,85 @@ describe('CRDT WOOT', function () {
       const seq4 = model.integrateIns(c4, c1, end, seq3, false);
       expect(model.getState(seq4)).to.eql('3124');
     });
+    it('integrate delete and insert operations such that both sites end up with ab1c̶', () => {
+      const site1 = '1';
+      const site2 = '2';
+      const { start, end } = generateSite(site1);
+      const c1: Char = generateChar(site1, 1, 'a', start.id, end.id);
+      const c2: Char = generateChar(site1, 2, 'b', c1.id, end.id);
+      const c3: Char = generateChar(site1, 3, 'c', c2.id, c1.id);
+
+      const seqSite1 = model.insert(
+        c3,
+        model.insert(c2, model.insert(c1, [start, end]))
+      );
+      expect(model.getState(seqSite1)).to.eql('abc');
+
+      const seqSite2 = model.integrateIns(
+        c3,
+        c2,
+        end,
+        model.integrateIns(
+          c2,
+          c1,
+          end,
+          model.integrateIns(c1, start, end, [start, end])
+        )
+      );
+      expect(model.getState(seqSite2)).to.eql('abc');
+
+      const c4: Char = generateChar(site2, 1, '1', c2.id, c3.id);
+      const seq2Site1 = model.insert(c4, seqSite1);
+      expect(model.getState(seq2Site1)).to.eql('ab1c');
+
+      const seq2Site2 = model.deleteChar(c3, seqSite2);
+      expect(model.getState(seq2Site2)).to.eql('ab');
+
+      const seq3Site1 = model.deleteChar(c3, seq2Site1);
+      expect(model.getState(seq3Site1)).to.eql('ab1');
+
+      const seq3Site2 = model.insert(c4, seq2Site2);
+      expect(model.getState(seq3Site2)).to.eql('ab1');
+    });
+    it('integrate delete operations such that both sites ends up with ab̶c̶', () => {
+      const site1 = '1';
+      const site2 = '2';
+      const { start, end } = generateSite(site1);
+      const c1: Char = generateChar(site1, 1, 'a', start.id, end.id);
+      const c2: Char = generateChar(site1, 2, 'b', c1.id, end.id);
+      const c3: Char = generateChar(site1, 3, 'c', c2.id, c1.id);
+
+      const seqSite1 = model.insert(
+        c3,
+        model.insert(c2, model.insert(c1, [start, end]))
+      );
+      expect(model.getState(seqSite1)).to.eql('abc');
+
+      const seqSite2 = model.integrateIns(
+        c3,
+        c2,
+        end,
+        model.integrateIns(
+          c2,
+          c1,
+          end,
+          model.integrateIns(c1, start, end, [start, end])
+        )
+      );
+      expect(model.getState(seqSite2)).to.eql('abc');
+
+      const seq2Site1 = model.deleteChar(c2, seqSite1);
+      expect(model.getState(seq2Site1)).to.eql('ac');
+
+      const seq2Site2 = model.deleteChar(c3, seqSite2);
+      expect(model.getState(seq2Site2)).to.eql('ab');
+
+      const seq3Site1 = model.deleteChar(c3, seq2Site1);
+      expect(model.getState(seq3Site1)).to.eql('a');
+
+      const seq3Site2 = model.deleteChar(c2, seq2Site2);
+      expect(model.getState(seq3Site2)).to.eql('a');
+    });
   });
   describe('Controller', () => {
     describe('Integrate local operations', () => {
