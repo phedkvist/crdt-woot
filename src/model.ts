@@ -16,7 +16,7 @@ export function prepareInsert(
   clock: number,
   sequence: Char[]
 ): Char {
-  const { nextId, prevId } = getPosition(index, sequence);
+  const { nextId, prevId } = position(index, sequence);
   return {
     id: uuidv4(),
     charId: {
@@ -136,31 +136,11 @@ export function subseq(
   return subseq;
 }
 
-export function getPosition(index: number, sequence: Char[]) {
+export function position(index: number, sequence: Char[]) {
   // TODO: Consider a better way of including start and end in visibleCharacteres.
   const visibleCharacters = sequence.filter((c) => c.visible || c.value === '');
   const prevId = visibleCharacters[index].id;
   const nextId = visibleCharacters[index + 1].id;
-  return {
-    prevId,
-    nextId,
-  };
-}
-
-export function position(index: number, sequence: Char[]) {
-  let nextChar: Char = sequence[0];
-  let i = 0;
-
-  let nextId: string, prevId: string;
-  while (i <= index) {
-    if (i === index) {
-      prevId = nextChar.id;
-      nextId = nextChar.nextId; // Det här är fel
-      break;
-    }
-    i += 1;
-    nextChar = sequence[i];
-  }
   return {
     prevId,
     nextId,

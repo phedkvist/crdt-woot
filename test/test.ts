@@ -56,19 +56,19 @@ describe('CRDT WOOT', function () {
       const c3: Char = generateChar(site1, 2, 'c', start.id, end.id);
       expect(model.position(0, [start, c1, c2, c3, end])).to.eql({
         prevId: start.id,
-        nextId: start.nextId,
+        nextId: c1.id,
       });
       expect(model.position(1, [start, c1, c2, c3, end])).to.eql({
         prevId: c1.id,
-        nextId: c1.nextId,
+        nextId: c2.id,
       });
       expect(model.position(2, [start, c1, c2, c3, end])).to.eql({
         prevId: c2.id,
-        nextId: c2.nextId,
+        nextId: c3.id,
       });
       expect(model.position(3, [start, c1, c2, c3, end])).to.eql({
         prevId: c3.id,
-        nextId: c3.nextId,
+        nextId: end.id,
       });
     });
     it('check if the characters exists in sequence', () => {
