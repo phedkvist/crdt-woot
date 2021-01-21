@@ -203,7 +203,7 @@ describe('CRDT WOOT', function () {
       const { start, end } = generateSite(site1);
       const c1: Char = generateChar(site1, 1, 'a', start.id, end.id);
       const c2: Char = generateChar(site1, 2, 'b', c1.id, end.id);
-      const c3: Char = generateChar(site1, 3, 'c', c2.id, c1.id);
+      const c3: Char = generateChar(site1, 3, 'c', c2.id, end.id);
 
       const seqSite1 = model.insert(
         c3,
@@ -309,13 +309,14 @@ describe('CRDT WOOT', function () {
       const { start, end, siteId } = generateSite();
 
       describe('Each site should result in document a312b', () => {
-        beforeEach(() => {
-          c1 = new Controller(_.cloneDeep(start), _.cloneDeep(end), siteId);
-          c2 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '2');
-          c3 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '3');
-        });
-
         it('Site 3 integrate op1, op2, op3', () => {
+          const c1 = new Controller(
+            _.cloneDeep(start),
+            _.cloneDeep(end),
+            siteId
+          );
+          const c2 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '2');
+          const c3 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '3');
           const op01 = c1.generateIns(0, 'a');
           expect(op01.char.prevId).to.eql(start.id);
           expect(op01.char.nextId).to.eql(end.id);
@@ -358,6 +359,14 @@ describe('CRDT WOOT', function () {
           expect(c3.getState()).to.eql('a312b');
         });
         it('Site 1 integrate op1, op2, op3', () => {
+          const c1 = new Controller(
+            _.cloneDeep(start),
+            _.cloneDeep(end),
+            siteId
+          );
+          const c2 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '2');
+          const c3 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '3');
+
           const op01 = c1.generateIns(0, 'a');
           expect(op01.char.prevId).to.eql(start.id);
           expect(op01.char.nextId).to.eql(end.id);
@@ -365,13 +374,11 @@ describe('CRDT WOOT', function () {
           const op02 = c1.generateIns(1, 'b');
           expect(op02.char.prevId).to.eql(op01.char.id);
           expect(op02.char.nextId).to.eql(end.id);
-
           expect(c1.getState()).to.eql('ab');
 
           c2.reception(_.cloneDeep(op01));
           c2.reception(_.cloneDeep(op02));
           c2.main();
-
           expect(c2.getState()).to.eql('ab');
 
           c3.reception(_.cloneDeep(op01));
@@ -403,7 +410,7 @@ describe('CRDT WOOT', function () {
         });
 
         it('Site 3 integrates op1, op2, op3, op4', () => {
-          c3.reception(op01);
+          c3.reception(_.cloneDeep(op01));
           c3.main();
           const op03 = c3.generateIns(0, '3');
           expect(c3.getState()).to.eql('31');
@@ -412,6 +419,94 @@ describe('CRDT WOOT', function () {
           c3.reception(op02);
           c3.main();
           expect(c3.getState()).to.eql('3124');
+        });
+        it('Site 2 integrates op1, op3, op4', () => {
+          c2.reception(_.cloneDeep(op01));
+          c2.main();
+          expect(c2.getState()).to.eql('12');
+
+          c3.reception(_.cloneDeep(op01));
+          c3.main();
+          const op03 = c3.generateIns(0, '3');
+          expect(c3.getState()).to.eql('31');
+          const op04 = c3.generateIns(2, '4');
+          expect(c3.getState()).to.eql('314');
+
+          c2.reception(_.cloneDeep(op03));
+          c2.main();
+          expect(c2.getState()).to.eql('312');
+
+          c2.reception(_.cloneDeep(op04));
+          c2.main();
+          expect(c2.getState()).to.eql('3124');
+        });
+      });
+      describe('Commutation of (del, ins) and (del, del)', () => {
+        it('Site 1 & 2 should end up with ab1c̶', () => {
+          const c1 = new Controller(
+            _.cloneDeep(start),
+            _.cloneDeep(end),
+            siteId
+          );
+          const c2 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '2');
+
+          const op1 = c1.generateIns(0, 'a');
+          const op2 = c1.generateIns(1, 'b');
+          const op3 = c1.generateIns(2, 'c');
+          expect(c1.getState()).to.eql('abc');
+
+          c2.reception(op1);
+          c2.reception(op2);
+          c2.reception(op3);
+          c2.main();
+          expect(c2.getState()).to.eql('abc');
+
+          const op4 = c2.generateDel(2);
+          expect(c2.getState()).to.eql('ab');
+
+          const op5 = c1.generateIns(2, '1');
+          expect(c1.getState()).to.eql('ab1c');
+
+          c1.reception(op4);
+          c1.main();
+          expect(c1.getState()).to.eql('ab1');
+
+          c2.reception(op5);
+          c2.main();
+          expect(c2.getState()).to.eql('ab1');
+        });
+        it('Site 1 & 2 should end up with a', () => {
+          const c1 = new Controller(
+            _.cloneDeep(start),
+            _.cloneDeep(end),
+            siteId
+          );
+          const c2 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '2');
+
+          const op1 = c1.generateIns(0, 'a');
+          const op2 = c1.generateIns(1, 'b');
+          const op3 = c1.generateIns(2, 'c');
+          expect(c1.getState()).to.eql('abc');
+
+          c2.reception(op1);
+          c2.reception(op2);
+          c2.reception(op3);
+          c2.main();
+          expect(c2.getState()).to.eql('abc');
+
+          const op4 = c1.generateDel(1);
+          expect(c1.getState()).to.eql('ac');
+
+          const op5 = c2.generateDel(2);
+          expect(c2.getState()).to.eql('ab');
+
+          c1.reception(op5);
+          c1.main();
+          expect(c1.getState()).to.eql('a');
+
+          c2.reception(op4);
+          c2.main();
+          expect(c2.getState()).to.eql('a');
         });
       });
     });

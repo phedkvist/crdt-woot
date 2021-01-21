@@ -50,8 +50,20 @@ export default class Controller {
     this.pool = this.pool.filter((p) => !integratedIds.includes(p.id));
   }
 
-  generateDel(position: number) {
+  generateDel(position: number, print: boolean = false): Payload {
     // Find element at position and mark as deleted.
+    const adjustedPosition = position + 1; // account for first element that is invisible
+    const { prevId } = model.position(adjustedPosition, this.site.sequence);
+    const char = this.site.sequence.find((c) => c.id === prevId);
+    if (print) {
+      console.log(char);
+    }
+    this.deleteChar(char);
+    return {
+      operation: Operation.Delete,
+      char,
+      id: uuidv4(),
+    };
   }
 
   generateIns(position: number, alpha: string): Payload {
