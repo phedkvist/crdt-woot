@@ -16,29 +16,37 @@ export default class Controller {
     this.pool = [];
   }
 
-  main() {
-    const {
-      site: { sequence },
-      pool,
-    } = this;
+  main(print: boolean = false) {
+    const { pool } = this;
     const integratedIds = [];
+    let sequence = this.site.sequence;
 
     pool.map(({ char, operation, id }) => {
       if (model.isExecutable(char, operation, sequence)) {
         if (operation === Operation.Insert) {
           const prev = sequence.find((c) => c.id === char.prevId);
           const next = sequence.find((c) => c.id === char.nextId);
-
+          if (!prev || !next) {
+            throw Error("Can't insert operation");
+          }
+          if (print) {
+            console.log(prev);
+            console.log(next);
+          }
           const newSequence = model.integrateIns(char, prev, next, sequence);
-          this.site = { ...this.site, sequence: newSequence };
+          sequence = newSequence;
         } else if (operation === Operation.Delete) {
           const newSequence = model.deleteChar(char, sequence);
-          this.site = { ...this.site, sequence: newSequence };
+          sequence = newSequence;
         }
         integratedIds.push(id);
       } else {
+        if (print) {
+          console.log('NOT EXECUTABLE');
+        }
       }
     });
+    this.site.sequence = sequence;
     this.pool = this.pool.filter((p) => !integratedIds.includes(p.id));
   }
 

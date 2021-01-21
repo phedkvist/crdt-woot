@@ -1,7 +1,7 @@
 import { Char } from '../src/types';
 import { v4 as uuidv4 } from 'uuid';
 
-export const generateSite = (siteId: string = '0') => {
+export const generateSite = (siteId: string = '1') => {
   const startId = uuidv4();
   const endId = uuidv4();
   const start: Char = {

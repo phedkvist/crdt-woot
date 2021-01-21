@@ -6,7 +6,7 @@ import { Char, Operation, Payload } from '../src/types';
 import { generateChar, generateSite } from './utils';
 
 describe('CRDT WOOT', function () {
-  describe.only('Model', () => {
+  describe('Model', () => {
     it('determine precedence between two characters from different sites', () => {
       const site1 = '1';
       const site2 = '2';
@@ -306,32 +306,43 @@ describe('CRDT WOOT', function () {
       let c1: Controller;
       let c2: Controller;
       let c3: Controller;
+      const { start, end, siteId } = generateSite();
 
       describe('Each site should result in document a312b', () => {
         beforeEach(() => {
-          const { start, end, siteId } = generateSite();
-
           c1 = new Controller(_.cloneDeep(start), _.cloneDeep(end), siteId);
           c2 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '2');
           c3 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '3');
+        });
 
+        it('Site 3 integrate op1, op2, op3', () => {
           const op01 = c1.generateIns(0, 'a');
+          expect(op01.char.prevId).to.eql(start.id);
+          expect(op01.char.nextId).to.eql(end.id);
+
           const op02 = c1.generateIns(1, 'b');
+          expect(op02.char.prevId).to.eql(op01.char.id);
+          expect(op02.char.nextId).to.eql(end.id);
+
+          expect(c1.getState()).to.eql('ab');
 
           c2.reception(_.cloneDeep(op01));
           c2.reception(_.cloneDeep(op02));
           c2.main();
+
           expect(c2.getState()).to.eql('ab');
 
           c3.reception(_.cloneDeep(op01));
           c3.reception(_.cloneDeep(op02));
           c3.main();
           expect(c3.getState()).to.eql('ab');
-        });
 
-        it('Site 3 integrate op1, op2, op3', () => {
-          const op1 = c1.generateIns(1, '1');
-          c3.reception(_.cloneDeep(op1));
+          const op03 = c1.generateIns(1, '1');
+          expect(op03.char.prevId).to.eql(op01.char.id);
+          expect(op03.char.nextId).to.eql(op02.char.id);
+          expect(c1.getState()).to.eql('a1b');
+
+          c3.reception(_.cloneDeep(op03));
           c3.main();
           expect(c3.getState()).to.eql('a1b');
 
@@ -347,6 +358,27 @@ describe('CRDT WOOT', function () {
           expect(c3.getState()).to.eql('a312b');
         });
         it('Site 1 integrate op1, op2, op3', () => {
+          const op01 = c1.generateIns(0, 'a');
+          expect(op01.char.prevId).to.eql(start.id);
+          expect(op01.char.nextId).to.eql(end.id);
+
+          const op02 = c1.generateIns(1, 'b');
+          expect(op02.char.prevId).to.eql(op01.char.id);
+          expect(op02.char.nextId).to.eql(end.id);
+
+          expect(c1.getState()).to.eql('ab');
+
+          c2.reception(_.cloneDeep(op01));
+          c2.reception(_.cloneDeep(op02));
+          c2.main();
+
+          expect(c2.getState()).to.eql('ab');
+
+          c3.reception(_.cloneDeep(op01));
+          c3.reception(_.cloneDeep(op02));
+          c3.main();
+          expect(c3.getState()).to.eql('ab');
+
           c1.generateIns(1, '1');
           expect(c1.getState()).to.eql('a1b');
           c1.generateIns(1, '3');
