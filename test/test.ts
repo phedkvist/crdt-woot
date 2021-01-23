@@ -1,9 +1,14 @@
 import { expect } from 'chai';
-import _ from 'lodash';
+import _, { forEach } from 'lodash';
 import Controller from '../src/controller';
 import * as model from '../src/model';
 import { Char, Operation, Payload } from '../src/types';
-import { generateChar, generateSite } from './utils';
+import {
+  generateArray,
+  generateChar,
+  generateSite,
+  randomElementsBetween,
+} from './utils';
 
 describe('CRDT WOOT', function () {
   describe('Model', () => {
@@ -507,6 +512,61 @@ describe('CRDT WOOT', function () {
           c2.reception(op4);
           c2.main();
           expect(c2.getState()).to.eql('a');
+        });
+      });
+      describe('Receive operations in random order and end up with same state', () => {
+        it('10 insert operations retrieved in random order', () => {
+          const c1 = new Controller(
+            _.cloneDeep(start),
+            _.cloneDeep(end),
+            siteId
+          );
+          const c2 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '2');
+
+          let text = '';
+          const payloads = generateArray(10).map((v, i) => {
+            text += i.toString();
+            return c1.generateIns(i, i.toString());
+          });
+
+          const state = c1.getState();
+          expect(state).to.eql(text);
+
+          const shuffledPayloads = _.shuffle(payloads);
+          shuffledPayloads.forEach((p) => {
+            c2.reception(p);
+          });
+
+          c2.main();
+          expect(c2.getState()).to.eql(state);
+        });
+        it('10 insert operations and 5 delete operations retrieved in random order', () => {
+          const c1 = new Controller(
+            _.cloneDeep(start),
+            _.cloneDeep(end),
+            siteId
+          );
+          const c2 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '2');
+
+          let text = '';
+          const insertPayloads = generateArray(10).map((i) => {
+            text += i.toString();
+            return c1.generateIns(i, i.toString());
+          });
+
+          const deletePayloads = randomElementsBetween(5, 5).map((i) => {
+            return c1.generateDel(i);
+          });
+
+          const payloads = [...insertPayloads, ...deletePayloads];
+
+          const shuffledPayloads = _.shuffle(payloads);
+          shuffledPayloads.forEach((p) => {
+            c2.reception(p);
+          });
+
+          c2.main();
+          expect(c2.getState()).to.eql(c1.getState());
         });
       });
     });

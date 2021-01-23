@@ -1,5 +1,6 @@
 import { Char } from '../src/types';
 import { v4 as uuidv4 } from 'uuid';
+import { shuffle } from 'lodash';
 
 export const generateSite = (siteId: string = '1') => {
   const startId = uuidv4();
@@ -46,3 +47,11 @@ export const generateChar = (
   prevId,
   nextId,
 });
+
+export const generateArray = (number: number) => {
+  return Array.from(Array(number)).map((v, i) => i);
+};
+
+export const randomElementsBetween = (len: number, size: number) => {
+  return shuffle(generateArray(len)).filter((v, i) => i < size);
+};

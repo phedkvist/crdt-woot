@@ -17,12 +17,15 @@ export default class Controller {
   }
 
   main(print: boolean = false) {
-    const { pool } = this;
-    const integratedIds = [];
+    let integratedIds = [];
     let sequence = this.site.sequence;
+    let executablePayloads = this.pool.filter(({ char, operation }) =>
+      model.isExecutable(char, operation, sequence)
+    );
 
-    pool.map(({ char, operation, id }) => {
-      if (model.isExecutable(char, operation, sequence)) {
+    // TODO: Should remove payloads that have already been applied.
+    while (executablePayloads.length) {
+      executablePayloads.map(({ char, operation, id }) => {
         if (operation === Operation.Insert) {
           const prev = sequence.find((c) => c.id === char.prevId);
           const next = sequence.find((c) => c.id === char.nextId);
@@ -40,14 +43,14 @@ export default class Controller {
           sequence = newSequence;
         }
         integratedIds.push(id);
-      } else {
-        if (print) {
-          console.log('NOT EXECUTABLE');
-        }
-      }
-    });
+      });
+      this.pool = this.pool.filter((p) => !integratedIds.includes(p.id));
+      integratedIds = [];
+      executablePayloads = this.pool.filter(({ char, operation }) =>
+        model.isExecutable(char, operation, sequence)
+      );
+    }
     this.site.sequence = sequence;
-    this.pool = this.pool.filter((p) => !integratedIds.includes(p.id));
   }
 
   generateDel(position: number, print: boolean = false): Payload {

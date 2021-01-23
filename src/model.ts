@@ -138,9 +138,20 @@ export function subseq(
 
 export function position(index: number, sequence: Char[]) {
   // TODO: Consider a better way of including start and end in visibleCharacteres.
-  const visibleCharacters = sequence.filter((c) => c.visible || c.value === '');
-  const prevId = visibleCharacters[index].id;
-  const nextId = visibleCharacters[index + 1].id;
+  const visibleCharacters = sequence.filter((c) => c.visible);
+  visibleCharacters.unshift(sequence[0]);
+  visibleCharacters.push(sequence[sequence.length - 1]);
+  const prevChar = visibleCharacters[index];
+  const nextChar = visibleCharacters[index + 1];
+  if (!prevChar || !nextChar) {
+    throw Error(
+      `Prev char or next char out of bounds. Indexes: (${index}, ${index + 1})
+      }. Len visible chars: ${visibleCharacters.length}.
+      Len sequence: ${sequence.length}`
+    );
+  }
+  const prevId = prevChar.id;
+  const nextId = nextChar.id;
   return {
     prevId,
     nextId,
