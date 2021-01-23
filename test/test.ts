@@ -513,6 +513,46 @@ describe('CRDT WOOT', function () {
           c2.main();
           expect(c2.getState()).to.eql('a');
         });
+        it('Site 1 & 2 both delete the same characters and end up with a', () => {
+          const c1 = new Controller(
+            _.cloneDeep(start),
+            _.cloneDeep(end),
+            siteId
+          );
+          const c2 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '2');
+
+          const op1 = c1.generateIns(0, 'a');
+          const op2 = c1.generateIns(1, 'b');
+          const op3 = c1.generateIns(2, 'c');
+          expect(c1.getState()).to.eql('abc');
+
+          c2.reception(op1);
+          c2.reception(op2);
+          c2.reception(op3);
+          c2.main();
+          expect(c2.getState()).to.eql('abc');
+
+          const op4 = c2.generateDel(1);
+          const op5 = c1.generateDel(1);
+          expect(c2.getState()).to.eql('ac');
+          expect(c1.getState()).to.eql('ac');
+          c1.reception(op4);
+          c2.reception(op5);
+          c1.main();
+          c2.main();
+          expect(c2.getState()).to.eql('ac');
+          expect(c1.getState()).to.eql('ac');
+          const op6 = c2.generateDel(1);
+          const op7 = c1.generateDel(1);
+          expect(c2.getState()).to.eql('a');
+          expect(c1.getState()).to.eql('a');
+          c1.reception(op6);
+          c2.reception(op7);
+          c1.main();
+          c2.main();
+          expect(c2.getState()).to.eql('a');
+          expect(c1.getState()).to.eql('a');
+        });
       });
       describe('Receive operations in random order and end up with same state', () => {
         it('10 insert operations retrieved in random order', () => {
@@ -554,6 +594,12 @@ describe('CRDT WOOT', function () {
             return c1.generateIns(i, i.toString());
           });
 
+          // This way of testing is not optimal, since when we are deleting characters
+          // the length of the visible sequence decreases, hence we can only remove the
+          // first 5 characters.
+          // TODO: Change to a loop where loop trough say 5 times, and let the
+          // the length shrink, but take that into account when selecting which char
+          // to remove.
           const deletePayloads = randomElementsBetween(5, 5).map((i) => {
             return c1.generateDel(i);
           });
@@ -567,6 +613,9 @@ describe('CRDT WOOT', function () {
 
           c2.main();
           expect(c2.getState()).to.eql(c1.getState());
+        });
+        it('insert operations and delete operations produced by multiple sites', () => {
+          // TODO:
         });
       });
     });

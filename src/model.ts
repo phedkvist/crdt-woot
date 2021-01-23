@@ -137,10 +137,10 @@ export function subseq(
 }
 
 export function position(index: number, sequence: Char[]) {
-  // TODO: Consider a better way of including start and end in visibleCharacteres.
   const visibleCharacters = sequence.filter((c) => c.visible);
   visibleCharacters.unshift(sequence[0]);
   visibleCharacters.push(sequence[sequence.length - 1]);
+
   const prevChar = visibleCharacters[index];
   const nextChar = visibleCharacters[index + 1];
   if (!prevChar || !nextChar) {
