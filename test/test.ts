@@ -1,14 +1,9 @@
 import { expect } from 'chai';
-import _, { forEach } from 'lodash';
+import _, { shuffle } from 'lodash';
 import Controller from '../src/controller';
 import * as model from '../src/model';
 import { Char, Operation, Payload } from '../src/types';
-import {
-  generateArray,
-  generateChar,
-  generateSite,
-  randomElementsBetween,
-} from './utils';
+import { generateChar, generateSite } from './utils';
 
 describe('CRDT WOOT', function () {
   describe('Model', () => {
@@ -564,7 +559,7 @@ describe('CRDT WOOT', function () {
           const c2 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '2');
 
           let text = '';
-          const payloads = generateArray(10).map((v, i) => {
+          const payloads = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((v, i) => {
             text += i.toString();
             return c1.generateIns(i, i.toString());
           });
@@ -589,7 +584,7 @@ describe('CRDT WOOT', function () {
           const c2 = new Controller(_.cloneDeep(start), _.cloneDeep(end), '2');
 
           let text = '';
-          const insertPayloads = generateArray(10).map((i) => {
+          const insertPayloads = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => {
             text += i.toString();
             return c1.generateIns(i, i.toString());
           });
@@ -600,9 +595,11 @@ describe('CRDT WOOT', function () {
           // TODO: Change to a loop where loop trough say 5 times, and let the
           // the length shrink, but take that into account when selecting which char
           // to remove.
-          const deletePayloads = randomElementsBetween(5, 5).map((i) => {
-            return c1.generateDel(i);
-          });
+          const deletePayloads = shuffle([0, 1, 2, 3, 4])
+            .filter((v, i) => i < 5)
+            .map((i) => {
+              return c1.generateDel(i);
+            });
 
           const payloads = [...insertPayloads, ...deletePayloads];
 

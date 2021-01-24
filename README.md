@@ -2,7 +2,9 @@
 
 A collaborative text editor implemented using the CRDT algorithm WOOT.
 
-TODO: Consider using CRDT Loogot instead, it seems more performant?
+WOOT (Without Operational Transformation) is an algorithm created by Gérald Oster, Pascal Urso, Pascal Molli, Abdessamad Imine, published on 6 Nov 2006, in a research paper named Data Consistency for P2P Collaborative Editing.
+
+As all CRDT (Conflict Free Replicated Data-types) based algorithms, the data type is constructed such that no conflict can occur. As long as all operations are sent to all replicas, all replicas converge to the same state. CRDTs allows all replicas to communicate in a peer-to-peer network, using for example a gossip protocol. The operations that are sent to each replica, can be received in any order, applied multiple times, and still converge to the same state. It is a useful algorithm for a privacy-centric data sharing application, which involves no central server, and each payload can be end-to-end encrypted.
 
 ### Data model
 
