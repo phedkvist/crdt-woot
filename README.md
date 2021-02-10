@@ -57,9 +57,17 @@ defined as a <= <sub><sup>S</sub></sup> b if and only if `pos(S, a)` <= `pos(S, 
 relation <= <sub><sup>S</sub></sup> is defined as a <= <sub><sup>S</sub></sup> b if and only if `pos(S, a)` <
 `pos(S, b)`.
 
-## Implemenation
+## Implementation
+
+The implementation is divided into a model and controller. The model contains all the algorithms that works with the sequence of characters, functions such insert, delete, position, isExecutable etc. The controller interfaces with the client application, and creates payloads that can be sent to other replicas, and processes payloads from other replices.
 
 ### Controller
+
+The main function updates operations that have been receieved and are executable. Some operations might no be executable, as operations can be recevied in any order. For instance a delete operation can't be received before the insert operation has been implemented. The main updates the sequence according to incoming operations, and uses the model to integrate insert or deletion of characters.
+
+Generate delete creates a payload of a deletion of a character at the given position and other related metadata other replicas will use to successfully execute the operation.
+
+Generate insert creates a payload of an insert operation between two characters.
 
 ### Model
 

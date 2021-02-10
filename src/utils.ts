@@ -1,4 +1,4 @@
-import { Char } from '../src/types';
+import { Char } from './types';
 import { v4 as uuidv4 } from 'uuid';
 import { shuffle } from 'lodash';
 

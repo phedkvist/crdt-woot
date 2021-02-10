@@ -3,7 +3,7 @@ import _, { shuffle } from 'lodash';
 import Controller from '../src/controller';
 import * as model from '../src/model';
 import { Char, Operation, Payload } from '../src/types';
-import { generateChar, generateSite } from './utils';
+import { generateChar, generateSite } from '../src/utils';
 
 describe('CRDT WOOT', function () {
   describe('Model', () => {
