@@ -2,8 +2,11 @@
   "name": "crdt-woot",
   "version": "1.0.0",
   "description": "A collaborative text editor using the CRDT algorithm WOOT.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
   "scripts": {
     "test": "mocha -r ts-node/register test/*.ts",
     "build": "rm -rf dist && tsc"

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import CRDT from '../../src/controller';
-import { generateSite } from '../../src/utils';
+import CRDT, { generateSite } from 'crdt-woot';
 import ReactQuill from 'react-quill';
 
 import 'react-quill/dist/quill.snow.css';

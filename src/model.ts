@@ -51,7 +51,7 @@ export function integrateIns(
   next: Char,
   sequence: Char[],
   print: boolean = false
-) {
+): Char[] {
   const lowerbound = sequence.findIndex((c) => c.id === prev.id);
   const upperbound = sequence.findIndex((c) => c.id === next.id);
 

@@ -1,13 +1,21 @@
 {
   "compilerOptions": {
+    "target": "es2017",
     "module": "commonjs",
-    "esModuleInterop": true,
-    "target": "es6",
-    "moduleResolution": "node",
-    "sourceMap": true,
+    "lib": ["esnext", "dom"],
     "outDir": "dist",
-    "declaration": true
+    "declaration": true,
+    "declarationDir": "./dist",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "inlineSources": true,
+    "sourceMap": true,
+    "typeRoots": ["./node_modules/@types", "./src/@types"],
+    "noImplicitAny": true,
+    "resolveJsonModule": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
-  "lib": ["es2015"],
-  "exclude": ["client-example"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }

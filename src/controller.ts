@@ -17,7 +17,7 @@ export default class Controller {
   }
 
   main(print: boolean = false) {
-    let integratedIds = [];
+    let integratedIds: string[] = [];
     let sequence = this.site.sequence;
     let executablePayloads = this.pool.filter(({ char, operation }) =>
       model.isExecutable(char, operation, sequence)
