@@ -51,7 +51,7 @@ export function integrateIns(
   next: Char,
   sequence: Char[],
   print: boolean = false
-): Char[] {
+): { sequence: Char[]; index: number } {
   const lowerbound = sequence.findIndex((c) => c.id === prev.id);
   const upperbound = sequence.findIndex((c) => c.id === next.id);
 
@@ -72,7 +72,7 @@ export function integrateIns(
   if (subsequence.length === 0) {
     const tmpSequence = _.cloneDeep(sequence);
     tmpSequence.splice(upperbound, 0, incomingChar);
-    return tmpSequence;
+    return { sequence: tmpSequence, index: upperbound };
   } else {
     const L = [prev];
 

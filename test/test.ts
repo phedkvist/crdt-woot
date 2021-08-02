@@ -116,7 +116,10 @@ describe('CRDT WOOT', function () {
       const site1 = '1';
       const { start, end } = generateSite();
       const c1: Char = generateChar(site1, 0, 'a', start.id, end.id);
-      const seq = model.integrateIns(c1, start, end, [start, end]);
+      const { sequence: seq } = model.integrateIns(c1, start, end, [
+        start,
+        end,
+      ]);
       expect(seq[1]).to.eql(c1);
     });
     it('integrate insert operation from other site that is inserted at the same position', () => {
@@ -127,13 +130,13 @@ describe('CRDT WOOT', function () {
       expect(seq[1]).to.eql(c1);
       const site2 = '2';
       const c2: Char = generateChar(site2, 0, 'b', start.id, end.id);
-      const seq2 = model.integrateIns(c2, start, end, seq);
+      const { sequence: seq2 } = model.integrateIns(c2, start, end, seq);
       expect(model.comesBefore(c1.charId, c2.charId)).to.eql(true);
       expect(seq2[1]).to.eql(c1);
       expect(seq2[2]).to.eql(c2);
       const site3 = '3';
       const c3: Char = generateChar(site3, 0, 'c', start.id, end.id);
-      const seq3 = model.integrateIns(c3, start, end, seq2);
+      const { sequence: seq3 } = model.integrateIns(c3, start, end, seq2);
       expect(seq3[1]).to.eql(c1);
       expect(seq3[2]).to.eql(c2);
       expect(seq3[3]).to.eql(c3);
@@ -152,7 +155,7 @@ describe('CRDT WOOT', function () {
       expect(model.getState(seq)).to.eql('a31b');
       const site2 = '2';
       const c5: Char = generateChar(site2, 0, '2', c1.id, c2.id);
-      const seq2 = model.integrateIns(c5, c1, c2, seq);
+      const { sequence: seq2 } = model.integrateIns(c5, c1, c2, seq);
       expect(model.comesBefore(c5.charId, c3.charId)).to.eql(false);
       expect(model.getState(seq2)).to.eql('a312b');
     });
@@ -169,13 +172,13 @@ describe('CRDT WOOT', function () {
 
       const seq = model.insert(
         c3,
-        model.integrateIns(c1, start, end, [start, end])
+        model.integrateIns(c1, start, end, [start, end]).sequence
       );
       expect(model.getState(seq)).to.eql('31');
       const seq2 = model.insert(c4, seq);
       expect(model.getState(seq2)).to.eql('314');
       const seq3 = model.integrateIns(c2, start, end, seq2, false);
-      expect(model.getState(seq3)).to.eql('3124');
+      expect(model.getState(seq3.sequence)).to.eql('3124');
     });
     it('integrate insert operations such that site 2 end up with 3124', () => {
       const site1 = '1';
@@ -190,11 +193,11 @@ describe('CRDT WOOT', function () {
 
       const seq = model.insert(c2, [start, end]);
       expect(model.getState(seq)).to.eql('2');
-      const seq2 = model.integrateIns(c1, start, end, seq);
+      const { sequence: seq2 } = model.integrateIns(c1, start, end, seq);
       expect(model.getState(seq2)).to.eql('12');
-      const seq3 = model.integrateIns(c3, start, c1, seq2, false);
+      const { sequence: seq3 } = model.integrateIns(c3, start, c1, seq2, false);
       expect(model.getState(seq3)).to.eql('312');
-      const seq4 = model.integrateIns(c4, c1, end, seq3, false);
+      const { sequence: seq4 } = model.integrateIns(c4, c1, end, seq3, false);
       expect(model.getState(seq4)).to.eql('3124');
     });
     it('integrate delete and insert operations such that both sites end up with ab1c̶', () => {
@@ -219,16 +222,16 @@ describe('CRDT WOOT', function () {
           c2,
           c1,
           end,
-          model.integrateIns(c1, start, end, [start, end])
-        )
+          model.integrateIns(c1, start, end, [start, end]).sequence
+        ).sequence
       );
-      expect(model.getState(seqSite2)).to.eql('abc');
+      expect(model.getState(seqSite2.sequence)).to.eql('abc');
 
       const c4: Char = generateChar(site2, 1, '1', c2.id, c3.id);
       const seq2Site1 = model.insert(c4, seqSite1);
       expect(model.getState(seq2Site1)).to.eql('ab1c');
 
-      const seq2Site2 = model.deleteChar(c3, seqSite2);
+      const seq2Site2 = model.deleteChar(c3, seqSite2.sequence);
       expect(model.getState(seq2Site2)).to.eql('ab');
 
       const seq3Site1 = model.deleteChar(c3, seq2Site1);
@@ -259,15 +262,15 @@ describe('CRDT WOOT', function () {
           c2,
           c1,
           end,
-          model.integrateIns(c1, start, end, [start, end])
-        )
+          model.integrateIns(c1, start, end, [start, end]).sequence
+        ).sequence
       );
-      expect(model.getState(seqSite2)).to.eql('abc');
+      expect(model.getState(seqSite2.sequence)).to.eql('abc');
 
       const seq2Site1 = model.deleteChar(c2, seqSite1);
       expect(model.getState(seq2Site1)).to.eql('ac');
 
-      const seq2Site2 = model.deleteChar(c3, seqSite2);
+      const seq2Site2 = model.deleteChar(c3, seqSite2.sequence);
       expect(model.getState(seq2Site2)).to.eql('ab');
 
       const seq3Site1 = model.deleteChar(c3, seq2Site1);
