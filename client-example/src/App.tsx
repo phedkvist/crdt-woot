@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import CRDT, { generateSite } from 'crdt-woot';
 import ReactQuill from 'react-quill';
 
@@ -6,51 +6,23 @@ import 'react-quill/dist/quill.snow.css';
 import './App.css';
 
 const { start, end, siteId } = generateSite();
-const editor = new CRDT(start, end, siteId);
+// const editor = new CRDT(start, end, siteId);
 
 function App() {
   const [value, setValue] = useState('');
+  const ref = useRef<ReactQuill | null>(null);
 
-  /*
-  const insert = (
-    chars: String,
-    startIndex: number,
-    attributes: object,
-    source: string
-  ) => {
-    //console.log('insert: ', startIndex, ' ', chars)
-    let index = startIndex;
-    for (let i in chars) {
-      let char = chars[i];
-      let crdtIndex = this.state.history.getRelativeIndex(index);
-      // this.state.history.insert(crdtIndex[0].index, crdtIndex[1].index, char, attributes, source);
-      index += 1;
+  const [editor, setEditor] = useState<CRDT>();
+
+  useEffect(() => {
+    if (ref !== null && editor === null) {
+      const insert = (index: number, value: string) =>
+        ref.current?.getEditor().insertText(index, value, 'silent');
+      const del = (index: number) =>
+        ref.current?.getEditor().deleteText(index, 1);
+      setEditor(new CRDT(start, end, siteId, insert, del));
     }
-  };
-
-  remoteInsert = (index: number, char: Char) => {
-    if (this.reactQuillRef.current) {
-      this.reactQuillRef.current.getEditor().insertText(index, char.char, {
-        'italic': char.italic,
-        'bold': char.bold,
-        'underline': char.underline,
-      }, "silent");
-    }
-
-
-  const deleteCharacters = (startIndex: number, length: number, source: string) => {
-    //console.log('delete: ', startIndex, length)
-    let index = startIndex;
-    for (let i = 0; i < length; i++) {
-      try {
-        // let chars = this.state.history.getRelativeIndex(index);
-        // this.state.history.delete(chars[1], source);
-      } catch {
-        alert("failed to find relative index");
-      }
-    }
-  }
-  */
+  }, [ref]);
 
   const inspectDelta = (ops: any, index: number, source: string) => {
     if (ops['insert'] != null) {
@@ -58,7 +30,7 @@ function App() {
       let chars = ops['insert'];
       let attributes = ops['attributes'];
       console.log(chars, index, attributes, source);
-      editor.generateIns(index, chars);
+      editor && editor.generateIns(index, chars);
       // insert(chars, index, attributes, source);
     } else if (ops['delete'] != null) {
       let len = ops['delete'];
@@ -67,7 +39,7 @@ function App() {
       console.log(len, itemsRemaining);
       while (itemsRemaining > 0) {
         console.log('deleting at ', index + itemsRemaining);
-        editor.generateDel(index + itemsRemaining - 1);
+        editor && editor.generateDel(index + itemsRemaining - 1);
         itemsRemaining = itemsRemaining - 1;
       }
       // editor.generateDel(index);
@@ -78,7 +50,7 @@ function App() {
       console.log(index, len, attributes, source);
       // this.retain(index, len, attributes, source);
     }
-    console.log(editor.getState());
+    console.log(editor && editor.getState());
   };
 
   const onChange = (value: string, delta: any, source: any) => {
@@ -105,7 +77,12 @@ function App() {
   return (
     <div className="App">
       <div className="editor">
-        <ReactQuill theme="snow" value={value} onChange={onChange} />
+        <ReactQuill
+          ref={ref}
+          theme="snow"
+          defaultValue={value}
+          onChange={onChange}
+        />
       </div>
     </div>
   );

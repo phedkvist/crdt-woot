@@ -5,14 +5,24 @@ import * as model from './model';
 export default class Controller {
   site: Site;
   pool: Payload[];
+  editorInsert?: (index: number, value: string) => void;
+  editorDelete?: (index: number) => void;
 
-  constructor(start: Char, end: Char, siteId: string) {
+  constructor(
+    start: Char,
+    end: Char,
+    siteId: string,
+    insert?: (index: number, value: string) => void,
+    del?: (index: number) => void
+  ) {
     this.site = {
       siteId,
       clock: 0,
       sequence: [start, end],
       operationPool: [],
     };
+    this.editorInsert = insert;
+    this.editorDelete = del;
     this.pool = [];
   }
 
@@ -36,10 +46,28 @@ export default class Controller {
             console.log(prev);
             console.log(next);
           }
-          const newSequence = model.integrateIns(char, prev, next, sequence);
+          const { sequence: newSequence, index } = model.integrateIns(
+            char,
+            prev,
+            next,
+            sequence
+          );
+          if (this.editorInsert) {
+            this.editorInsert(index, char.value);
+          }
           sequence = newSequence;
         } else if (operation === Operation.Delete) {
           const newSequence = model.deleteChar(char, sequence);
+          if (this.editorDelete) {
+            const visibleCharacters = sequence.filter((c) => c.visible);
+            const index = visibleCharacters.findIndex((c) => c.id === char.id);
+            if (index !== -1) {
+              this.editorDelete(index);
+            } else {
+              throw Error('Could not find character to be deleted');
+            }
+          }
+          // const index = model.position(char, sequence);
           sequence = newSequence;
         }
         integratedIds.push(id);
@@ -50,6 +78,8 @@ export default class Controller {
         model.isExecutable(char, operation, sequence)
       );
     }
+
+    // TODO: These changes needs to be passed to the editor. Insert and delete operations.
     this.site.sequence = sequence;
   }
 
