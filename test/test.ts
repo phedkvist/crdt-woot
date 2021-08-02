@@ -398,7 +398,7 @@ describe('CRDT WOOT', function () {
         });
       });
       describe('Each site should result in document 3124', () => {
-        let op01, op02: Payload;
+        let op01: Payload, op02: Payload;
         beforeEach(() => {
           const { start, end, siteId } = generateSite();
           c1 = new Controller(_.cloneDeep(start), _.cloneDeep(end), siteId);
