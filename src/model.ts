@@ -170,7 +170,11 @@ export function isExecutable(
   if (operation === Operation.Delete) {
     return contains(char.id, sequence);
   } else if (operation === Operation.Insert) {
-    return contains(char.nextId, sequence) && contains(char.prevId, sequence);
+    return (
+      contains(char.nextId, sequence) &&
+      contains(char.prevId, sequence) &&
+      !contains(char.id, sequence)
+    );
   } else {
     throw Error('Unknow operation');
   }
