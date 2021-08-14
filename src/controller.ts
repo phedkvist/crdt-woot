@@ -7,13 +7,15 @@ export default class Controller {
   pool: Payload[];
   editorInsert?: (index: number, value: string) => void;
   editorDelete?: (index: number) => void;
+  sendPayload?: (payload: Payload) => void;
 
   constructor(
     start: Char,
     end: Char,
     siteId: string,
     insert?: (index: number, value: string) => void,
-    del?: (index: number) => void
+    del?: (index: number) => void,
+    sendPayload?: (payload: Payload) => void
   ) {
     this.site = {
       siteId,
@@ -23,6 +25,7 @@ export default class Controller {
     };
     this.editorInsert = insert;
     this.editorDelete = del;
+    this.sendPayload = sendPayload;
     this.pool = [];
   }
 
@@ -43,8 +46,8 @@ export default class Controller {
             throw Error("Can't insert operation");
           }
           if (print) {
-            console.log(prev);
-            console.log(next);
+            console.log(this.site.siteId, prev);
+            console.log(this.site.siteId, next);
           }
           const { sequence: newSequence, index } = model.integrateIns(
             char,
@@ -53,7 +56,15 @@ export default class Controller {
             sequence
           );
           if (this.editorInsert) {
-            this.editorInsert(index, char.value);
+            if (print) {
+              console.log(
+                this.site.siteId,
+                'insert at: ',
+                index - 1,
+                char.value
+              );
+            }
+            this.editorInsert(index - 1, char.value);
           }
           sequence = newSequence;
         } else if (operation === Operation.Delete) {
@@ -122,6 +133,7 @@ export default class Controller {
   }
 
   reception(payload: Payload) {
+    console.log('RECEIVED PAYLOAD', payload);
     this.pool.push(payload);
   }
 
