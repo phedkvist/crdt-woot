@@ -13,8 +13,8 @@ export default class Controller {
     start: Char,
     end: Char,
     siteId: string,
-    insert?: (index: number, value: string) => void,
-    del?: (index: number) => void,
+    editorInstert?: (index: number, value: string) => void,
+    editorDelete?: (index: number) => void,
     sendPayload?: (payload: Payload) => void
   ) {
     this.site = {
@@ -23,8 +23,8 @@ export default class Controller {
       sequence: [start, end],
       operationPool: [],
     };
-    this.editorInsert = insert;
-    this.editorDelete = del;
+    this.editorInsert = editorInstert;
+    this.editorDelete = editorDelete;
     this.sendPayload = sendPayload;
     this.pool = [];
   }
@@ -45,39 +45,36 @@ export default class Controller {
           if (!prev || !next) {
             throw Error("Can't insert operation");
           }
-          if (print) {
-            console.log(this.site.siteId, prev);
-            console.log(this.site.siteId, next);
-          }
-          const { sequence: newSequence, index } = model.integrateIns(
+          const { sequence: newSequence } = model.integrateIns(
             char,
             prev,
             next,
             sequence
           );
+          const index = newSequence
+            .filter((c) => c.visible)
+            .findIndex((c) => c.id === char.id);
           if (this.editorInsert) {
-            if (print) {
-              console.log(
-                this.site.siteId,
-                'insert at: ',
-                index - 1,
-                char.value
-              );
-            }
-            this.editorInsert(index - 1, char.value);
+            print &&
+              console.log(this.site.siteId, 'insert at: ', index, char.value);
+            this.editorInsert(index, char.value);
           }
           sequence = newSequence;
         } else if (operation === Operation.Delete) {
-          const newSequence = model.deleteChar(char, sequence);
           if (this.editorDelete) {
             const visibleCharacters = sequence.filter((c) => c.visible);
             const index = visibleCharacters.findIndex((c) => c.id === char.id);
+            print && console.log(this.site.siteId, index, char.id);
+            print && console.log(this.site.siteId, 'DELETE AT: ', index);
+
             if (index !== -1) {
               this.editorDelete(index);
             } else {
-              throw Error('Could not find character to be deleted');
+              print && console.log('SEQUENCE: ', sequence);
+              // throw Error('Could not find character to be deleted');
             }
           }
+          const newSequence = model.deleteChar(char, sequence);
           // const index = model.position(char, sequence);
           sequence = newSequence;
         }
@@ -88,8 +85,10 @@ export default class Controller {
       executablePayloads = this.pool.filter(({ char, operation }) =>
         model.isExecutable(char, operation, sequence)
       );
+      print && console.log('EXECUTABLE PAYLOADS: ', executablePayloads);
     }
 
+    print && console.log(this.site.siteId, sequence);
     // TODO: These changes needs to be passed to the editor. Insert and delete operations.
     this.site.sequence = sequence;
   }
@@ -99,9 +98,7 @@ export default class Controller {
     const adjustedPosition = position + 1; // account for first element that is invisible
     const { prevId } = model.position(adjustedPosition, this.site.sequence);
     const char = this.site.sequence.find((c) => c.id === prevId);
-    if (print) {
-      console.log(char);
-    }
+    print && console.log(char);
     this.deleteChar(char);
     return {
       operation: Operation.Delete,
@@ -110,7 +107,11 @@ export default class Controller {
     };
   }
 
-  generateIns(position: number, alpha: string): Payload {
+  generateIns(
+    position: number,
+    alpha: string,
+    print: boolean = false
+  ): Payload {
     const { sequence, clock, siteId } = this.site;
     const newClock = clock + 1;
 
@@ -126,14 +127,15 @@ export default class Controller {
       operation: Operation.Insert,
       id: uuidv4(),
     };
+
     const newSequence = model.insert(newChar, sequence);
-    // TODO: Broadcast newChar
+    print && console.log(this.site.siteId, newSequence);
     this.site = { ...this.site, clock: newClock, sequence: newSequence };
+
     return payload;
   }
 
   reception(payload: Payload) {
-    console.log('RECEIVED PAYLOAD', payload);
     this.pool.push(payload);
   }
 

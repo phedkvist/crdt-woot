@@ -5,28 +5,18 @@ import CRDT, { generateSite, types } from 'crdt-woot';
 
 const { start, end } = generateSite('A');
 
+const print = false;
+
 function App() {
   const [listeners, setListeners] = useState<CRDT[]>([]);
 
-  const updateListeners = (payload: types.Payload) => {
+  const updateListeners = (payload: types.Payload, fromSiteId: string) => {
     const siteId = payload.char.charId.siteId;
-    /*console.log('SITE ID: ', siteId);
-    console.log(
-      'Listeners: ',
-      listeners.map((c) => c.site.siteId)
-    );*/
+
     listeners.forEach((l) => {
-      if (l.site.siteId !== siteId) {
+      if (l.site.siteId !== fromSiteId) {
         l.reception(payload);
-        l.main(true);
-        /*console.log(
-          'SENT PAYLOAD TO',
-          l.site.siteId,
-          ', FROM: ',
-          siteId,
-          ', VAL: ',
-          payload.char.value
-        );*/
+        l.main(print);
       }
     });
   };
