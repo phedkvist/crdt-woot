@@ -9,7 +9,8 @@
   ],
   "scripts": {
     "test": "mocha -r ts-node/register test/*.ts",
-    "build": "rm -rf dist && tsc"
+    "build": "rm -rf dist && tsc",
+    "start": "cd client-example && react-scripts start"
   },
   "repository": {
     "type": "git",
