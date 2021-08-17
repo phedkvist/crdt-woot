@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import ReactQuill from 'react-quill';
-import CRDT, { generateSite, types } from 'crdt-woot';
-
+import CRDT, { types } from 'crdt-woot';
 import 'react-quill/dist/quill.snow.css';
+
+const printEditor = false;
 
 function Editor({
   setListener,
@@ -12,7 +13,7 @@ function Editor({
   end,
 }: {
   setListener: (crdt: CRDT) => void;
-  updateListeners: (p: types.Payload) => void;
+  updateListeners: (p: types.Payload, fromSiteId: string) => void;
   siteId: string;
   start: types.Char;
   end: types.Char;
@@ -23,61 +24,52 @@ function Editor({
   const [editor, setEditor] = useState<CRDT | null>(null);
 
   useEffect(() => {
-    // console.log(ref, editor);
     if (ref !== null && editor === null) {
       const insert = (index: number, value: string) =>
         ref.current?.getEditor().insertText(index, value, 'silent');
       const del = (index: number) =>
         ref.current?.getEditor().deleteText(index, 1);
-      // console.log('SITE ID: ', siteId);
       const editor = new CRDT(start, end, siteId, insert, del);
-      console.log('INIT TEXT: ', ref.current?.getEditor().getContents());
+      printEditor && console.log('NEW EDITOR: ', editor.site.siteId);
       setListener(editor);
       setEditor(editor);
     }
   }, [ref]);
 
   const inspectDelta = (ops: any, index: number, source: string) => {
-    console.log('OPS: ', ops);
+    // console.log('OPS: ', ops);
     if (ops['insert']) {
-      // console.log('INSERT', ' RANGE: ', this.state.selectedRange);
       const chars = ops['insert'];
       const attributes = ops['attributes'];
-      // console.log(chars, index, attributes, source);
       const p = editor && editor.generateIns(index, chars);
-      console.log('SENDING INSERT: ', p);
       if (p) {
-        updateListeners(p);
+        updateListeners(p, siteId);
       }
-      // insert(chars, index, attributes, source);
     } else if (ops['delete']) {
       const len = ops['delete'];
-      // console.log('DELETE: ', index, len, source);
       let itemsRemaining = len;
-      // console.log(len, itemsRemaining);
+
       while (itemsRemaining > 0) {
-        // console.log('deleting at ', index + itemsRemaining);
-        console.log('GENERATE DEL AT: ', index + itemsRemaining - 1);
+        // console.log(itemsRemaining);
+        // console.log('GENERATE DEL AT: ', index + itemsRemaining - 1);
         const p = editor && editor.generateDel(index + itemsRemaining - 1);
+        printEditor && console.log('GENERATE DEL FROM: ', siteId, p);
         if (p) {
-          updateListeners(p);
+          updateListeners(p, siteId);
         }
         itemsRemaining = itemsRemaining - 1;
       }
-      // editor.generateDel(index);
-      // this.delete(index, len, source);
     } else if (ops['retain']) {
       const len = ops['retain'];
       const attributes = ops['attributes'];
-      console.log(index, len, attributes, source);
+      // console.log(index, len, attributes, source);
       // this.retain(index, len, attributes, source);
     }
-    // console.log(editor && editor.getState());
   };
 
   const onChange = (value: string, delta: any, source: any) => {
     let index = delta.ops[0]['retain'] || 0;
-    console.log(siteId, value, delta, source);
+    printEditor && console.log(siteId, value, delta, source);
     if (source === 'user') {
       if (delta.ops.length === 4) {
         const deleteOps_1 = delta.ops[1];
@@ -96,13 +88,13 @@ function Editor({
         inspectDelta(delta.ops[0], index, source);
       }
     }
-    // setValue(value);
   };
 
   return (
     <div className="App">
       <div className="editor">
-        <ReactQuill ref={ref} theme="snow" onChange={onChange} />
+        <h2>{siteId}</h2>
+        <ReactQuill id={siteId} ref={ref} theme="snow" onChange={onChange} />
       </div>
     </div>
   );
