@@ -2,22 +2,24 @@ import { useState, useRef, useEffect } from 'react';
 import ReactQuill from 'react-quill';
 import CRDT, { types } from 'crdt-woot';
 import 'react-quill/dist/quill.snow.css';
+import { Site } from '../App';
 
 const printEditor = false;
 
 function Editor({
   setListener,
   updateListeners,
-  siteId,
+  site,
   start,
   end,
 }: {
   setListener: (crdt: CRDT) => void;
   updateListeners: (p: types.Payload, fromSiteId: string) => void;
-  siteId: string;
+  site: Site;
   start: types.Char;
   end: types.Char;
 }) {
+  const { siteId } = site;
   const [value, setValue] = useState(null);
   const ref = useRef<ReactQuill | null>(null);
 

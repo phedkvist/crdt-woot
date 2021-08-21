@@ -7,38 +7,66 @@ const { start, end } = generateSite('A');
 
 const print = false;
 
+export interface Site {
+  siteId: string;
+  isOnline: boolean;
+  model?: CRDT;
+}
+
 function App() {
-  const [listeners, setListeners] = useState<CRDT[]>([]);
+  const [siteA, setSiteA] = useState<Site>({ siteId: 'a', isOnline: true });
+  const [siteB, setSiteB] = useState<Site>({ siteId: 'b', isOnline: true });
 
-  const updateListeners = (payload: types.Payload, fromSiteId: string) => {
-    const siteId = payload.char.charId.siteId;
+  const toggleOnline = (
+    site: Site,
+    setSite: React.Dispatch<React.SetStateAction<Site>>,
+    otherSite: Site
+  ) => {
+    const isComingOnline = !site.isOnline;
+    if (isComingOnline) {
+      // notify other site about the update.
+      otherSite.isOnline && otherSite.model?.main();
 
-    listeners.forEach((l) => {
-      if (l.site.siteId !== fromSiteId) {
-        l.reception(payload);
-        l.main(print);
-      }
-    });
+      // process updates from other sites
+      otherSite.isOnline && site.model?.main();
+    }
+    setSite({ ...site, isOnline: !site.isOnline });
+  };
+
+  const updateListeners = (
+    payload: types.Payload,
+    fromSite: Site,
+    otherSite: Site
+  ) => {
+    otherSite.model?.reception(payload);
+    fromSite.isOnline && otherSite.isOnline && otherSite.model?.main();
   };
   return (
     <div className="App">
+      <button onClick={() => toggleOnline(siteA, setSiteA, siteB)}>
+        a {siteA.isOnline ? 'Online' : 'Offline'}
+      </button>
       <Editor
-        setListener={(l: CRDT) => setListeners([...listeners, l])}
-        updateListeners={updateListeners}
-        siteId={'A'}
+        setListener={(model: CRDT) => setSiteA({ ...siteA, model })}
+        updateListeners={(payload: types.Payload) =>
+          updateListeners(payload, siteA, siteB)
+        }
+        site={siteA}
         start={start}
         end={end}
       />
-      {/* Silly hack to make sure the setListeners state doesn't overwrite each other on first state update */}
-      {listeners.length > 0 && (
-        <Editor
-          setListener={(l: CRDT) => setListeners([...listeners, l])}
-          updateListeners={updateListeners}
-          siteId={'B'}
-          start={start}
-          end={end}
-        />
-      )}
+      <button onClick={() => toggleOnline(siteB, setSiteB, siteA)}>
+        b {siteB.isOnline ? 'Online' : 'Offline'}
+      </button>
+      <Editor
+        setListener={(model: CRDT) => setSiteB({ ...siteB, model })}
+        updateListeners={(payload: types.Payload) =>
+          updateListeners(payload, siteB, siteA)
+        }
+        site={siteB}
+        start={start}
+        end={end}
+      />
     </div>
   );
 }
