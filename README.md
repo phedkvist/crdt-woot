@@ -6,6 +6,8 @@ WOOT (Without Operational Transformation) is an algorithm created by Gérald Ost
 
 As all CRDT (Conflict Free Replicated Data-types) based algorithms, the data type is constructed such that no conflict can occur. As long as all operations are sent to all replicas, all replicas converge to the same state. CRDTs allows all replicas to communicate in a peer-to-peer network, using for example a gossip protocol. The operations that are sent to each replica, can be received in any order, applied multiple times, and still converge to the same state. It is a useful algorithm for a privacy-centric data sharing application, which involves no central server, and each payload can be end-to-end encrypted.
 
+The application can be tested on Heroku [here](https://crdt-woot.herokuapp.com).
+
 ## Data model
 
 ### Definition 1.
@@ -71,6 +73,12 @@ Generate insert creates a payload of an insert operation between two characters.
 
 ### Model
 
+The model contains all the logic for updating a sequence of character. Adding a character, removing a character and the logic for dealing with inserts at the same position. But also integrating inserts and deletes from other sites.
+
 ### Tests
 
-### Communication
+The tests covers most of the examples given in the research paper, but there is also some tests that randomises the order of operations.
+
+### Further imrpovements
+
+Currently there is no way of sending and receiving updates in the `/client-example`, and no logic for making sure you only receive relevant updates, but you can use a version vector to know which updates you need.
