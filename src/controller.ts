@@ -5,8 +5,8 @@ import * as model from './model';
 export default class Controller {
   site: Site;
   pool: Payload[];
-  editorInsert?: (index: number, value: string) => void;
-  editorDelete?: (index: number) => void;
+  editorInsert?: (index: number, value: string, siteId: string) => void;
+  editorDelete?: (index: number, siteId: string) => void;
   sendPayload?: (payload: Payload) => void;
   updateLocalSequence: (s: Char[]) => void;
 
@@ -14,8 +14,8 @@ export default class Controller {
     start: Char,
     end: Char,
     siteId: string,
-    editorInstert?: (index: number, value: string) => void,
-    editorDelete?: (index: number) => void,
+    editorInsert?: (index: number, value: string, siteId: string) => void,
+    editorDelete?: (index: number, siteId: string) => void,
     sendPayload?: (payload: Payload) => void,
     updateLocalSequence?: (s: Char[]) => void
   ) {
@@ -25,7 +25,7 @@ export default class Controller {
       sequence: [start, end],
       operationPool: [],
     };
-    this.editorInsert = editorInstert;
+    this.editorInsert = editorInsert;
     this.editorDelete = editorDelete;
     this.sendPayload = sendPayload;
     this.updateLocalSequence = updateLocalSequence;
@@ -57,7 +57,7 @@ export default class Controller {
             .filter((c) => c.visible)
             .findIndex((c) => c.id === char.id);
           if (this.editorInsert) {
-            this.editorInsert(index, char.value);
+            this.editorInsert(index, char.value, char.charId.siteId);
           }
           sequence = newSequence;
         } else if (operation === Operation.Delete) {
@@ -66,7 +66,7 @@ export default class Controller {
             const index = visibleCharacters.findIndex((c) => c.id === char.id);
 
             if (index !== -1) {
-              this.editorDelete(index);
+              this.editorDelete(index, char.charId.siteId);
             } else {
               // throw Error('Could not find character to be deleted');
             }

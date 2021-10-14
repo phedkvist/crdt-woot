@@ -1,9 +1,19 @@
 import { useState, useRef, useEffect } from 'react';
-import ReactQuill from 'react-quill';
+import ReactQuill, { Quill } from 'react-quill';
 import CRDT, { types } from 'crdt-woot';
 import 'react-quill/dist/quill.snow.css';
+import QuillCursors from 'quill-cursors';
 import { Site } from '../App';
 import { VisualizedSequence } from './VisualizedSequence';
+
+Quill.register('modules/cursors', QuillCursors);
+
+const modules = {
+  cursors: {
+    hideDelayMs: 5000,
+    transformOnTextChange: true,
+  },
+};
 
 const printEditor = false;
 
@@ -26,15 +36,34 @@ function Editor({
   const [editor, setEditor] = useState<CRDT | null>(null);
   const [sequence, setSequence] = useState<types.Char[]>([]);
 
+  const updateCursors = (index: number, siteId: string) => {
+    if (ref !== null) {
+      const quillCursors = ref.current
+        ?.getEditor()
+        .getModule('cursors') as QuillCursors;
+      const qC = quillCursors
+        .cursors()
+        .find((c: { id: string }) => c.id === siteId);
+      if (qC) {
+        quillCursors.moveCursor(qC.id, { index: index, length: 1 });
+      } else {
+        quillCursors.createCursor(siteId, siteId, '#0000FF	');
+        quillCursors.moveCursor(siteId, { index: index, length: 1 });
+      }
+    }
+  };
+
   useEffect(() => {
     if (ref !== null && editor === null) {
-      const insert = (index: number, value: string) => {
-        ref.current?.getEditor().insertText(index, value, 'silent');
-        setSequence(editor.site.sequence);
+      const insert = (index: number, value: string, siteId: string) => {
+        // UPDATE CURSOR HERE?
+        updateCursors(index, siteId);
+        return ref.current?.getEditor().insertText(index, value, 'silent');
       };
       const del = (index: number) => {
-        ref.current?.getEditor().deleteText(index, 1);
-        setSequence(editor.site.sequence);
+        // UPDATE CURSOR HERE?
+        updateCursors(index, siteId);
+        return ref.current?.getEditor().deleteText(index, 1);
       };
       const updateSequence = (s: types.Char[]) => setSequence(s);
       const editor = new CRDT(
@@ -46,6 +75,7 @@ function Editor({
         () => {},
         updateSequence
       );
+      const editor = new CRDT(start, end, siteId, insert, del);
       printEditor && console.log('NEW EDITOR: ', editor.site.siteId);
       setListener(editor);
       setEditor(editor);
@@ -108,7 +138,13 @@ function Editor({
     <div className="App">
       <div className="editor">
         <VisualizedSequence sequence={sequence} />
-        <ReactQuill id={siteId} ref={ref} theme="snow" onChange={onChange} />
+        <ReactQuill
+          id={siteId}
+          ref={ref}
+          theme="snow"
+          onChange={onChange}
+          modules={modules}
+        />
       </div>
     </div>
   );
