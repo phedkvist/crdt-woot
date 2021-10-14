@@ -14,8 +14,8 @@ export interface Site {
 }
 
 function App() {
-  const [siteA, setSiteA] = useState<Site>({ siteId: 'a', isOnline: true });
-  const [siteB, setSiteB] = useState<Site>({ siteId: 'b', isOnline: true });
+  const [siteA, setSiteA] = useState<Site>({ siteId: 'Alice', isOnline: true });
+  const [siteB, setSiteB] = useState<Site>({ siteId: 'Bob', isOnline: true });
 
   const toggleOnline = (
     site: Site,
@@ -43,9 +43,15 @@ function App() {
   };
   return (
     <div className="App">
-      <button onClick={() => toggleOnline(siteA, setSiteA, siteB)}>
-        a {siteA.isOnline ? 'Online' : 'Offline'}
-      </button>
+      <div className="header">
+        <h2>{siteA.siteId}</h2>
+        <button
+          className={`btn ${siteA.isOnline ? 'online' : 'offline'}`}
+          onClick={() => toggleOnline(siteA, setSiteA, siteB)}
+        >
+          {siteA.isOnline ? 'Online' : 'Offline'}
+        </button>
+      </div>
       <Editor
         setListener={(model: CRDT) => setSiteA({ ...siteA, model })}
         updateListeners={(payload: types.Payload) =>
@@ -55,9 +61,16 @@ function App() {
         start={start}
         end={end}
       />
-      <button onClick={() => toggleOnline(siteB, setSiteB, siteA)}>
-        b {siteB.isOnline ? 'Online' : 'Offline'}
-      </button>
+
+      <div className="header">
+        <h2>{siteB.siteId}</h2>
+        <button
+          className={`btn ${siteB.isOnline ? 'online' : 'offline'}`}
+          onClick={() => toggleOnline(siteB, setSiteB, siteA)}
+        >
+          {siteB.isOnline ? 'Online' : 'Offline'}
+        </button>
+      </div>
       <Editor
         setListener={(model: CRDT) => setSiteB({ ...siteB, model })}
         updateListeners={(payload: types.Payload) =>

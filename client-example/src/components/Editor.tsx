@@ -95,7 +95,6 @@ function Editor({
   return (
     <div className="App">
       <div className="editor">
-        <h2>{siteId}</h2>
         <ReactQuill id={siteId} ref={ref} theme="snow" onChange={onChange} />
       </div>
     </div>
