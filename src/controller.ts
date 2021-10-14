@@ -36,7 +36,6 @@ export default class Controller {
       model.isExecutable(char, operation, sequence)
     );
 
-    // TODO: Should remove payloads that have already been applied.
     while (executablePayloads.length) {
       executablePayloads.map(({ char, operation, id }) => {
         if (operation === Operation.Insert) {
@@ -55,8 +54,6 @@ export default class Controller {
             .filter((c) => c.visible)
             .findIndex((c) => c.id === char.id);
           if (this.editorInsert) {
-            print &&
-              console.log(this.site.siteId, 'insert at: ', index, char.value);
             this.editorInsert(index, char.value);
           }
           sequence = newSequence;
@@ -64,18 +61,14 @@ export default class Controller {
           if (this.editorDelete) {
             const visibleCharacters = sequence.filter((c) => c.visible);
             const index = visibleCharacters.findIndex((c) => c.id === char.id);
-            print && console.log(this.site.siteId, index, char.id);
-            print && console.log(this.site.siteId, 'DELETE AT: ', index);
 
             if (index !== -1) {
               this.editorDelete(index);
             } else {
-              print && console.log('SEQUENCE: ', sequence);
               // throw Error('Could not find character to be deleted');
             }
           }
           const newSequence = model.deleteChar(char, sequence);
-          // const index = model.position(char, sequence);
           sequence = newSequence;
         }
         integratedIds.push(id);
@@ -85,16 +78,11 @@ export default class Controller {
       executablePayloads = this.pool.filter(({ char, operation }) =>
         model.isExecutable(char, operation, sequence)
       );
-      print && console.log('EXECUTABLE PAYLOADS: ', executablePayloads);
     }
-
-    print && console.log(this.site.siteId, sequence);
-    // TODO: These changes needs to be passed to the editor. Insert and delete operations.
     this.site.sequence = sequence;
   }
 
   generateDel(position: number, print: boolean = false): Payload {
-    // Find element at position and mark as deleted.
     const adjustedPosition = position + 1; // account for first element that is invisible
     const { prevId } = model.position(adjustedPosition, this.site.sequence);
     const char = this.site.sequence.find((c) => c.id === prevId);
@@ -129,7 +117,6 @@ export default class Controller {
     };
 
     const newSequence = model.insert(newChar, sequence);
-    print && console.log(this.site.siteId, newSequence);
     this.site = { ...this.site, clock: newClock, sequence: newSequence };
 
     return payload;

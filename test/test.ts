@@ -444,7 +444,7 @@ describe('CRDT WOOT', function () {
           expect(c2.getState()).to.eql('3124');
         });
       });
-      describe('Commutation of (del, ins) and (del, del)', () => {
+      describe('Commutative operations of (del, ins) and (del, del)', () => {
         it('Site 1 & 2 should end up with ab1c̶', () => {
           const c1 = new Controller(
             _.cloneDeep(start),
