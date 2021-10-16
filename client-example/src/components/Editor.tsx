@@ -3,6 +3,7 @@ import ReactQuill from 'react-quill';
 import CRDT, { types } from 'crdt-woot';
 import 'react-quill/dist/quill.snow.css';
 import { Site } from '../App';
+import { VisualizedSequence } from './VisualizedSequence';
 
 const printEditor = false;
 
@@ -24,17 +25,23 @@ function Editor({
   const ref = useRef<ReactQuill | null>(null);
 
   const [editor, setEditor] = useState<CRDT | null>(null);
+  const [sequence, setSequence] = useState<types.Char[]>([]);
 
   useEffect(() => {
     if (ref !== null && editor === null) {
-      const insert = (index: number, value: string) =>
+      const insert = (index: number, value: string) => {
         ref.current?.getEditor().insertText(index, value, 'silent');
-      const del = (index: number) =>
+        setSequence(editor.site.sequence);
+      };
+      const del = (index: number) => {
         ref.current?.getEditor().deleteText(index, 1);
+        setSequence(editor.site.sequence);
+      };
       const editor = new CRDT(start, end, siteId, insert, del);
       printEditor && console.log('NEW EDITOR: ', editor.site.siteId);
       setListener(editor);
       setEditor(editor);
+      setSequence(editor.site.sequence);
     }
   }, [ref]);
 
@@ -67,6 +74,7 @@ function Editor({
       // console.log(index, len, attributes, source);
       // this.retain(index, len, attributes, source);
     }
+    editor && setSequence(editor.site.sequence);
   };
 
   const onChange = (value: string, delta: any, source: any) => {
@@ -95,6 +103,7 @@ function Editor({
   return (
     <div className="App">
       <div className="editor">
+        <VisualizedSequence sequence={sequence} />
         <ReactQuill id={siteId} ref={ref} theme="snow" onChange={onChange} />
       </div>
     </div>

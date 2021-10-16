@@ -1,0 +1,28 @@
+.sequence-container {
+  display: flex;
+  margin-bottom: 10px;
+  width: 100%;
+  overflow-x: auto;
+}
+
+.first {
+  border-left: 1px solid lightgrey;
+}
+
+.char {
+  min-width: 14px;
+  font-size: 14px;
+  width: auto;
+  border-top: 1px solid lightgrey;
+  border-bottom: 1px solid lightgrey;
+  border-right: 1px solid lightgrey;
+}
+
+.tombstone {
+  text-decoration: line-through;
+  background-color: red;
+}
+
+.space {
+  white-space: pre-wrap;
+}
