@@ -43,6 +43,7 @@ function App() {
   };
   return (
     <div className="App">
+      <Links />
       <div className="header">
         <h2>{siteA.siteId}</h2>
         <button
@@ -83,5 +84,28 @@ function App() {
     </div>
   );
 }
+
+const Links = () => {
+  return (
+    <div>
+      <h2>CRDT WOOT</h2>
+      <a
+        className="external-link"
+        target="_blank"
+        href="https://github.com/phedkvist/crdt-woot"
+      >
+        Github
+      </a>
+      <a
+        className="external-link"
+        target="_blank"
+        href="https://hal.inria.fr/inria-00108523/document"
+      >
+        Research paper
+      </a>
+      <hr />
+    </div>
+  );
+};
 
 export default App;

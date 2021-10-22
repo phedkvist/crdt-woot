@@ -8,6 +8,17 @@ h2 {
   margin: 5px;
 }
 
+.external-link {
+  color: lightblue;
+  margin: 5px;
+}
+
+hr {
+  border-color: lavender;
+  border-style: solid;
+  margin-bottom: 20px;
+}
+
 .header {
   display: flex;
   justify-content: center;
