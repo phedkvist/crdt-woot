@@ -92,6 +92,13 @@ const Links = () => {
       <a
         className="external-link"
         target="_blank"
+        href="https://pierrehedkvist.com/posts/collaborative-editing-using-crdts"
+      >
+        Blog article
+      </a>
+      <a
+        className="external-link"
+        target="_blank"
         href="https://github.com/phedkvist/crdt-woot"
       >
         Github
