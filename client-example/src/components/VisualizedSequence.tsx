@@ -7,7 +7,6 @@ export const VisualizedSequence = ({
 }: {
   sequence: types.Char[];
 }) => {
-  console.log('sequence: ', sequence);
   return (
     <div className="sequence-container">
       {sequence.map((c, i) => (

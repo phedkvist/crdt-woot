@@ -21,7 +21,6 @@ function Editor({
   end: types.Char;
 }) {
   const { siteId } = site;
-  const [value, setValue] = useState(null);
   const ref = useRef<ReactQuill | null>(null);
 
   const [editor, setEditor] = useState<CRDT | null>(null);
@@ -37,7 +36,16 @@ function Editor({
         ref.current?.getEditor().deleteText(index, 1);
         setSequence(editor.site.sequence);
       };
-      const editor = new CRDT(start, end, siteId, insert, del);
+      const updateSequence = (s: types.Char[]) => setSequence(s);
+      const editor = new CRDT(
+        start,
+        end,
+        siteId,
+        insert,
+        del,
+        () => {},
+        updateSequence
+      );
       printEditor && console.log('NEW EDITOR: ', editor.site.siteId);
       setListener(editor);
       setEditor(editor);
@@ -46,7 +54,6 @@ function Editor({
   }, [ref]);
 
   const inspectDelta = (ops: any, index: number, source: string) => {
-    // console.log('OPS: ', ops);
     if (ops['insert']) {
       const chars = ops['insert'];
       const attributes = ops['attributes'];
@@ -59,8 +66,6 @@ function Editor({
       let itemsRemaining = len;
 
       while (itemsRemaining > 0) {
-        // console.log(itemsRemaining);
-        // console.log('GENERATE DEL AT: ', index + itemsRemaining - 1);
         const p = editor && editor.generateDel(index + itemsRemaining - 1);
         printEditor && console.log('GENERATE DEL FROM: ', siteId, p);
         if (p) {
@@ -74,7 +79,6 @@ function Editor({
       // console.log(index, len, attributes, source);
       // this.retain(index, len, attributes, source);
     }
-    editor && setSequence(editor.site.sequence);
   };
 
   const onChange = (value: string, delta: any, source: any) => {

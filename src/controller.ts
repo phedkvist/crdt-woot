@@ -8,6 +8,7 @@ export default class Controller {
   editorInsert?: (index: number, value: string) => void;
   editorDelete?: (index: number) => void;
   sendPayload?: (payload: Payload) => void;
+  updateLocalSequence: (s: Char[]) => void;
 
   constructor(
     start: Char,
@@ -15,7 +16,8 @@ export default class Controller {
     siteId: string,
     editorInstert?: (index: number, value: string) => void,
     editorDelete?: (index: number) => void,
-    sendPayload?: (payload: Payload) => void
+    sendPayload?: (payload: Payload) => void,
+    updateLocalSequence?: (s: Char[]) => void
   ) {
     this.site = {
       siteId,
@@ -26,6 +28,7 @@ export default class Controller {
     this.editorInsert = editorInstert;
     this.editorDelete = editorDelete;
     this.sendPayload = sendPayload;
+    this.updateLocalSequence = updateLocalSequence;
     this.pool = [];
   }
 
@@ -80,6 +83,7 @@ export default class Controller {
       );
     }
     this.site.sequence = sequence;
+    this.updateLocalSequence(sequence);
   }
 
   generateDel(position: number, print: boolean = false): Payload {
@@ -118,6 +122,7 @@ export default class Controller {
 
     const newSequence = model.insert(newChar, sequence);
     this.site = { ...this.site, clock: newClock, sequence: newSequence };
+    this.updateLocalSequence(newSequence);
 
     return payload;
   }
@@ -129,6 +134,7 @@ export default class Controller {
   deleteChar(char: Char) {
     const newSequence = model.deleteChar(char, this.site.sequence);
     this.site = { ...this.site, sequence: newSequence };
+    this.updateLocalSequence(newSequence);
   }
 
   getState() {
