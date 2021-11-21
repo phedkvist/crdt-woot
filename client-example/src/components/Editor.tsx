@@ -36,19 +36,20 @@ function Editor({
   const [editor, setEditor] = useState<CRDT | null>(null);
   const [sequence, setSequence] = useState<types.Char[]>([]);
 
-  const updateCursors = (index: number, siteId: string) => {
-    if (ref !== null) {
-      const quillCursors = ref.current
-        ?.getEditor()
-        .getModule('cursors') as QuillCursors;
-      const qC = quillCursors
+  const updateCursors = (
+    cursorModule: QuillCursors | null,
+    index: number,
+    siteId: string
+  ) => {
+    if (cursorModule !== null) {
+      const qC = cursorModule
         .cursors()
         .find((c: { id: string }) => c.id === siteId);
       if (qC) {
-        quillCursors.moveCursor(qC.id, { index: index, length: 1 });
+        cursorModule.moveCursor(qC.id, { index: index + 1, length: 0 });
       } else {
-        quillCursors.createCursor(siteId, siteId, '#0000FF	');
-        quillCursors.moveCursor(siteId, { index: index, length: 1 });
+        cursorModule.createCursor(siteId, siteId, '#0000FF');
+        cursorModule.moveCursor(siteId, { index: index + 1, length: 0 });
       }
     }
   };
@@ -56,14 +57,18 @@ function Editor({
   useEffect(() => {
     if (ref !== null && editor === null) {
       const insert = (index: number, value: string, siteId: string) => {
-        // UPDATE CURSOR HERE?
-        updateCursors(index, siteId);
-        return ref.current?.getEditor().insertText(index, value, 'silent');
+        ref.current?.getEditor().insertText(index, value, 'silent');
+        const cursorModule = ref.current
+          ?.getEditor()
+          .getModule('cursors') as QuillCursors;
+        updateCursors(cursorModule, index, siteId);
       };
-      const del = (index: number) => {
-        // UPDATE CURSOR HERE?
-        updateCursors(index, siteId);
-        return ref.current?.getEditor().deleteText(index, 1);
+      const del = (index: number, siteId: string) => {
+        ref.current?.getEditor().deleteText(index, 1);
+        const cursorModule = ref.current
+          ?.getEditor()
+          .getModule('cursors') as QuillCursors;
+        updateCursors(cursorModule, index, siteId);
       };
       const updateSequence = (s: types.Char[]) => setSequence(s);
       const editor = new CRDT(
@@ -75,7 +80,6 @@ function Editor({
         () => {},
         updateSequence
       );
-      const editor = new CRDT(start, end, siteId, insert, del);
       printEditor && console.log('NEW EDITOR: ', editor.site.siteId);
       setListener(editor);
       setEditor(editor);
