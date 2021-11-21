@@ -5,8 +5,15 @@ import 'react-quill/dist/quill.snow.css';
 import QuillCursors from 'quill-cursors';
 import { Site } from '../App';
 import { VisualizedSequence } from './VisualizedSequence';
+import IQuillRange from 'quill-cursors/dist/quill-cursors/i-range';
+import { debounce } from 'lodash';
+import { Sources } from 'quill';
 
 Quill.register('modules/cursors', QuillCursors);
+
+// Constant to simulate a high-latency connection when sending cursor
+// position updates.
+const CURSOR_LATENCY = 1000;
 
 const modules = {
   cursors: {
@@ -20,12 +27,17 @@ const printEditor = false;
 function Editor({
   setListener,
   updateListeners,
+  updateRange,
   site,
   start,
   end,
 }: {
-  setListener: (crdt: CRDT) => void;
+  setListener: (
+    crdt: CRDT,
+    onSelect: (index: number, range: number, siteId: string) => void
+  ) => void;
   updateListeners: (p: types.Payload, fromSiteId: string) => void;
+  updateRange: (fromIndex: number, toIndex: number) => void;
   site: Site;
   start: types.Char;
   end: types.Char;
@@ -39,6 +51,7 @@ function Editor({
   const updateCursors = (
     cursorModule: QuillCursors | null,
     index: number,
+    length: number,
     siteId: string
   ) => {
     if (cursorModule !== null) {
@@ -46,29 +59,70 @@ function Editor({
         .cursors()
         .find((c: { id: string }) => c.id === siteId);
       if (qC) {
-        cursorModule.moveCursor(qC.id, { index: index + 1, length: 0 });
+        cursorModule.moveCursor(qC.id, { index: index, length });
       } else {
         cursorModule.createCursor(siteId, siteId, '#0000FF');
-        cursorModule.moveCursor(siteId, { index: index + 1, length: 0 });
+        cursorModule.moveCursor(siteId, { index: index, length });
       }
     }
   };
 
+  function selectionChangeHandler(
+    updateCursorCallback: (fromIndex: number, toIndex: number) => void
+  ) {
+    // const debouncedUpdate = debounce(updateCursor, 500);
+
+    return function (
+      range: IQuillRange,
+      oldRange: IQuillRange,
+      source: Sources
+    ) {
+      console.log('RANGE: ', range);
+      if (source === 'user' && range) {
+        // If the user has manually updated their selection, send this change
+        // immediately, because a user update is important, and should be
+        // sent as soon as possible for a smooth experience.
+        // updateCursor(range);
+        updateCursorCallback(range.index, range.index + range.length);
+      } else {
+        // Otherwise, it's a text change update or similar. These changes will
+        // automatically get transformed by the receiving client without latency.
+        // If we try to keep sending updates, then this will undo the low-latency
+        // transformation already performed, which we don't want to do. Instead,
+        // add a debounce so that we only send the update once the user has stopped
+        // typing, which ensures we send the most up-to-date position (which should
+        // hopefully match what the receiving client already thinks is the cursor
+        // position anyway).
+        // debouncedUpdate(range);
+      }
+    };
+
+    function updateCursor(range: IQuillRange) {
+      // Use a timeout to simulate a high latency connection.
+      setTimeout(
+        () => updateCursorCallback(range.index, range.index + range.length),
+        CURSOR_LATENCY
+      );
+    }
+  }
+
   useEffect(() => {
     if (ref !== null && editor === null) {
+      const cursorModule = ref.current
+        ?.getEditor()
+        .getModule('cursors') as QuillCursors;
+
       const insert = (index: number, value: string, siteId: string) => {
         ref.current?.getEditor().insertText(index, value, 'silent');
-        const cursorModule = ref.current
-          ?.getEditor()
-          .getModule('cursors') as QuillCursors;
-        updateCursors(cursorModule, index, siteId);
+        updateCursors(cursorModule, index + 1, 0, siteId);
       };
       const del = (index: number, siteId: string) => {
         ref.current?.getEditor().deleteText(index, 1);
-        const cursorModule = ref.current
-          ?.getEditor()
-          .getModule('cursors') as QuillCursors;
-        updateCursors(cursorModule, index, siteId);
+        updateCursors(cursorModule, index + 1, 0, siteId);
+      };
+      const select = (index: number, range: number, siteId: string) => {
+        console.log('RECEIVING CURSOR UPDATE FROM: ', siteId, index, range);
+        updateCursors(cursorModule, index, range, siteId);
       };
       const updateSequence = (s: types.Char[]) => setSequence(s);
       const editor = new CRDT(
@@ -81,11 +135,23 @@ function Editor({
         updateSequence
       );
       printEditor && console.log('NEW EDITOR: ', editor.site.siteId);
-      setListener(editor);
+      setListener(editor, select);
       setEditor(editor);
       setSequence(editor.site.sequence);
+
+      ref.current
+        ?.getEditor()
+        .on('selection-change', selectionChangeHandler(updateRange));
     }
   }, [ref]);
+
+  useEffect(() => {
+    if (ref) {
+      ref.current
+        ?.getEditor()
+        .on('selection-change', selectionChangeHandler(updateRange));
+    }
+  }, [updateRange]);
 
   const inspectDelta = (ops: any, index: number, source: string) => {
     if (ops['insert']) {

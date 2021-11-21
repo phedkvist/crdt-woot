@@ -11,6 +11,7 @@ export interface Site {
   siteId: string;
   isOnline: boolean;
   model?: CRDT;
+  onSelect?: (index: number, range: number, siteId: string) => void;
 }
 
 function App() {
@@ -41,6 +42,21 @@ function App() {
     otherSite.model?.reception(payload);
     fromSite.isOnline && otherSite.isOnline && otherSite.model?.main();
   };
+
+  const updateRange = (
+    fromIndex: number,
+    toIndex: number,
+    fromSite: Site,
+    otherSite: Site
+  ) => {
+    console.log(
+      'RUNNING UPDATE RANGE: ',
+      fromSite.onSelect,
+      otherSite.onSelect
+    );
+    otherSite.onSelect &&
+      otherSite.onSelect(fromIndex, toIndex - fromIndex, fromSite.siteId);
+  };
   return (
     <div className="App">
       <Links />
@@ -54,9 +70,18 @@ function App() {
         </button>
       </div>
       <Editor
-        setListener={(model: CRDT) => setSiteA({ ...siteA, model })}
+        setListener={(
+          model: CRDT,
+          onSelect: (index: number, range: number, siteId: string) => void
+        ) => {
+          console.log('ON SELECT:', onSelect);
+          setSiteA({ ...siteA, model, onSelect });
+        }}
         updateListeners={(payload: types.Payload) =>
           updateListeners(payload, siteA, siteB)
+        }
+        updateRange={(fromIndex: number, toIndex: number) =>
+          updateRange(fromIndex, toIndex, siteA, siteB)
         }
         site={siteA}
         start={start}
@@ -73,9 +98,18 @@ function App() {
         </button>
       </div>
       <Editor
-        setListener={(model: CRDT) => setSiteB({ ...siteB, model })}
+        setListener={(
+          model: CRDT,
+          onSelect: (index: number, range: number, siteId: string) => void
+        ) => {
+          console.log('ON SELECT:', onSelect);
+          setSiteB({ ...siteB, model, onSelect });
+        }}
         updateListeners={(payload: types.Payload) =>
           updateListeners(payload, siteB, siteA)
+        }
+        updateRange={(fromIndex: number, toIndex: number) =>
+          updateRange(fromIndex, toIndex, siteB, siteA)
         }
         site={siteB}
         start={start}
