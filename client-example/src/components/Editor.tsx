@@ -6,14 +6,9 @@ import QuillCursors from 'quill-cursors';
 import { Site } from '../App';
 import { VisualizedSequence } from './VisualizedSequence';
 import IQuillRange from 'quill-cursors/dist/quill-cursors/i-range';
-import { debounce } from 'lodash';
 import { Sources } from 'quill';
 
 Quill.register('modules/cursors', QuillCursors);
-
-// Constant to simulate a high-latency connection when sending cursor
-// position updates.
-const CURSOR_LATENCY = 1000;
 
 const modules = {
   cursors: {
@@ -70,40 +65,19 @@ function Editor({
   function selectionChangeHandler(
     updateCursorCallback: (fromIndex: number, toIndex: number) => void
   ) {
-    // const debouncedUpdate = debounce(updateCursor, 500);
-
     return function (
       range: IQuillRange,
       oldRange: IQuillRange,
       source: Sources
     ) {
-      console.log('RANGE: ', range);
       if (source === 'user' && range) {
         // If the user has manually updated their selection, send this change
         // immediately, because a user update is important, and should be
         // sent as soon as possible for a smooth experience.
         // updateCursor(range);
         updateCursorCallback(range.index, range.index + range.length);
-      } else {
-        // Otherwise, it's a text change update or similar. These changes will
-        // automatically get transformed by the receiving client without latency.
-        // If we try to keep sending updates, then this will undo the low-latency
-        // transformation already performed, which we don't want to do. Instead,
-        // add a debounce so that we only send the update once the user has stopped
-        // typing, which ensures we send the most up-to-date position (which should
-        // hopefully match what the receiving client already thinks is the cursor
-        // position anyway).
-        // debouncedUpdate(range);
       }
     };
-
-    function updateCursor(range: IQuillRange) {
-      // Use a timeout to simulate a high latency connection.
-      setTimeout(
-        () => updateCursorCallback(range.index, range.index + range.length),
-        CURSOR_LATENCY
-      );
-    }
   }
 
   useEffect(() => {
@@ -121,7 +95,6 @@ function Editor({
         updateCursors(cursorModule, index + 1, 0, siteId);
       };
       const select = (index: number, range: number, siteId: string) => {
-        console.log('RECEIVING CURSOR UPDATE FROM: ', siteId, index, range);
         updateCursors(cursorModule, index, range, siteId);
       };
       const updateSequence = (s: types.Char[]) => setSequence(s);
@@ -134,14 +107,9 @@ function Editor({
         () => {},
         updateSequence
       );
-      printEditor && console.log('NEW EDITOR: ', editor.site.siteId);
       setListener(editor, select);
       setEditor(editor);
       setSequence(editor.site.sequence);
-
-      ref.current
-        ?.getEditor()
-        .on('selection-change', selectionChangeHandler(updateRange));
     }
   }, [ref]);
 
