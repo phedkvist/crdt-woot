@@ -49,11 +49,6 @@ function App() {
     fromSite: Site,
     otherSite: Site
   ) => {
-    console.log(
-      'RUNNING UPDATE RANGE: ',
-      fromSite.onSelect,
-      otherSite.onSelect
-    );
     otherSite.onSelect &&
       otherSite.onSelect(fromIndex, toIndex - fromIndex, fromSite.siteId);
   };
@@ -73,10 +68,7 @@ function App() {
         setListener={(
           model: CRDT,
           onSelect: (index: number, range: number, siteId: string) => void
-        ) => {
-          console.log('ON SELECT:', onSelect);
-          setSiteA({ ...siteA, model, onSelect });
-        }}
+        ) => setSiteA({ ...siteA, model, onSelect })}
         updateListeners={(payload: types.Payload) =>
           updateListeners(payload, siteA, siteB)
         }
@@ -101,10 +93,7 @@ function App() {
         setListener={(
           model: CRDT,
           onSelect: (index: number, range: number, siteId: string) => void
-        ) => {
-          console.log('ON SELECT:', onSelect);
-          setSiteB({ ...siteB, model, onSelect });
-        }}
+        ) => setSiteB({ ...siteB, model, onSelect })}
         updateListeners={(payload: types.Payload) =>
           updateListeners(payload, siteB, siteA)
         }
