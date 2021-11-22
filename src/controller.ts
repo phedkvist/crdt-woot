@@ -83,7 +83,7 @@ export default class Controller {
       );
     }
     this.site.sequence = sequence;
-    this.updateLocalSequence(sequence);
+    this.updateLocalSequence && this.updateLocalSequence(sequence);
   }
 
   generateDel(position: number, print: boolean = false): Payload {
@@ -122,7 +122,7 @@ export default class Controller {
 
     const newSequence = model.insert(newChar, sequence);
     this.site = { ...this.site, clock: newClock, sequence: newSequence };
-    this.updateLocalSequence(newSequence);
+    this.updateLocalSequence && this.updateLocalSequence(newSequence);
 
     return payload;
   }
@@ -134,7 +134,7 @@ export default class Controller {
   deleteChar(char: Char) {
     const newSequence = model.deleteChar(char, this.site.sequence);
     this.site = { ...this.site, sequence: newSequence };
-    this.updateLocalSequence(newSequence);
+    this.updateLocalSequence && this.updateLocalSequence(newSequence);
   }
 
   getState() {
