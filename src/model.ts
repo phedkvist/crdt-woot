@@ -34,7 +34,7 @@ export function insert(char: Char, sequence: Char[]) {
   const prev = sequence.find((c) => c.id === char.prevId);
   const next = sequence.find((c) => c.id === char.nextId);
 
-  if (!next && !prev) {
+  if (!next || !prev) {
     throw Error("Can't find the prevChar.id or nextChar.id");
   }
 

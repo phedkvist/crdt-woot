@@ -15,6 +15,14 @@ describe('CRDT WOOT', function () {
       const c2: Char = generateChar(site2, 0, 'b', start.id, end.id);
       expect(model.comesBefore(c1.charId, c2.charId)).to.eql(true);
     });
+    it('determines precedence between the same characters', () => {
+      const site1 = '1';
+      const site2 = '1';
+      const { start, end } = generateSite();
+      const c1: Char = generateChar(site1, 0, 'a', start.id, end.id);
+      const c2: Char = generateChar(site2, 0, 'a', start.id, end.id);
+      expect(model.comesBefore(c1.charId, c2.charId)).to.eql(false);
+    });
     it('determine precedence between two characters from same sites', () => {
       const site1 = '1';
       const { start, end } = generateSite();
@@ -111,6 +119,22 @@ describe('CRDT WOOT', function () {
       const c1: Char = generateChar(site1, 0, 'a', start.id, end.id);
       const seq = model.insert(c1, [start, end]);
       expect(seq[1]).to.eql(c1);
+    });
+    it('local insert should throw error if previous character cant be found', () => {
+      const site1 = '1';
+      const { start, end } = generateSite(site1);
+      const c1: Char = generateChar(site1, 0, 'a', 'afsgfa', end.id);
+      expect(() => model.insert(c1, [start, end])).to.throw(
+        "Can't find the prevChar.id or nextChar.id"
+      );
+    });
+    it('local insert should throw error if next character cant be found', () => {
+      const site1 = '1';
+      const { start, end } = generateSite(site1);
+      const c1: Char = generateChar(site1, 0, 'a', start.id, 'aegff');
+      expect(() => model.insert(c1, [start, end])).to.throw(
+        "Can't find the prevChar.id or nextChar.id"
+      );
     });
     it('integrate insert operation', () => {
       const site1 = '1';
